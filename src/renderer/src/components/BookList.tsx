@@ -1,15 +1,18 @@
 import { BookOpenCheck } from 'lucide-react'
 import { Book } from '../App'
 import { BookCard } from './BookCard'
+import type { ViewMode } from './ViewToggle'
 
 interface BookListProps {
   books: Book[]
   selectedBookIndex: number | null
-  onUpdateProgress: (id: number, currentPage: number) => void
+  viewMode: ViewMode
+  onOpenBook: (index: number) => void
+  onUpdateBook: (id: number, updates: Partial<Book>) => void
   onDelete: (id: number) => void
 }
 
-export function BookList({ books, selectedBookIndex, onUpdateProgress, onDelete }: BookListProps): JSX.Element {
+export function BookList({ books, selectedBookIndex, viewMode, onOpenBook, onUpdateBook, onDelete }: BookListProps): JSX.Element {
   if (books.length === 0) {
     return (
       <div className="empty-state">
@@ -21,13 +24,15 @@ export function BookList({ books, selectedBookIndex, onUpdateProgress, onDelete 
   }
 
   return (
-    <div className="book-list">
+    <div className={viewMode === 'grid' ? 'book-grid' : 'book-list'}>
       {books.map((book, i) => (
         <BookCard
           key={book.id}
           book={book}
           isSelected={selectedBookIndex === i}
-          onUpdateProgress={onUpdateProgress}
+          viewMode={viewMode}
+          onOpen={() => onOpenBook(i)}
+          onUpdateBook={onUpdateBook}
           onDelete={onDelete}
         />
       ))}

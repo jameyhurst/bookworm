@@ -1,15 +1,14 @@
-import { Library, BookOpen, Sparkles, CheckCircle, Plus, Sun, Moon, type LucideIcon } from 'lucide-react'
+import { Library, BookOpen, Sparkles, CheckCircle, Plus, Compass, Settings, type LucideIcon } from 'lucide-react'
 import { BookStatus } from '../App'
 import appIcon from '../../../../resources/icon-transparent.png'
 
 interface SidebarProps {
-  activeFilter: BookStatus | 'all'
-  onFilterChange: (filter: BookStatus | 'all') => void
+  activeFilter: BookStatus | 'all' | 'discover'
+  onFilterChange: (filter: BookStatus | 'all' | 'discover') => void
   counts: Record<BookStatus | 'all', number>
   onAddBook: () => void
+  onOpenSettings: () => void
   visible: boolean
-  theme: 'dark' | 'light'
-  onToggleTheme: () => void
 }
 
 const filters: { key: BookStatus | 'all'; label: string; icon: LucideIcon }[] = [
@@ -19,7 +18,7 @@ const filters: { key: BookStatus | 'all'; label: string; icon: LucideIcon }[] = 
   { key: 'finished', label: 'Finished', icon: CheckCircle }
 ]
 
-export function Sidebar({ activeFilter, onFilterChange, counts, onAddBook, visible, theme, onToggleTheme }: SidebarProps): JSX.Element {
+export function Sidebar({ activeFilter, onFilterChange, counts, onAddBook, onOpenSettings, visible }: SidebarProps): JSX.Element {
   return (
     <aside className={`sidebar${visible ? '' : ' collapsed'}`}>
       <div className="sidebar-header">
@@ -47,13 +46,23 @@ export function Sidebar({ activeFilter, onFilterChange, counts, onAddBook, visib
             <span className="nav-count">{counts[key]}</span>
           </button>
         ))}
+
+        <div className="sidebar-divider" />
+
+        <button
+          className={`nav-item ${activeFilter === 'discover' ? 'active' : ''}`}
+          onClick={() => onFilterChange('discover')}
+        >
+          <Compass size={16} className="nav-icon" />
+          <span className="nav-label">Discover</span>
+        </button>
       </nav>
 
       <div className="sidebar-footer">
-        <button className="theme-toggle" onClick={onToggleTheme} title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}>
-          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+        <button className="settings-btn" onClick={onOpenSettings} title="Settings">
+          <Settings size={16} />
         </button>
-        <span className="app-version">v0.1.0</span>
+        <span className="app-version">v0.2.0</span>
       </div>
     </aside>
   )

@@ -149,7 +149,7 @@ body {
   font-size: 14px;
   cursor: pointer;
   opacity: 0.6;
-  transition: all 0.15s ease;
+  transition: background 0.15s ease, opacity 0.15s ease;
 }
 
 .nav-item:hover {
@@ -189,22 +189,6 @@ body {
   border-top: 1px solid var(--border);
 }
 
-.theme-toggle {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 4px;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.15s ease;
-}
-
-.theme-toggle:hover {
-  color: var(--text-primary);
-}
 
 .app-version {
   font-size: 11px;
@@ -215,7 +199,7 @@ body {
 .main-content {
   flex: 1;
   overflow-y: auto;
-  padding: 60px 40px 40px;
+  padding: 20px 40px 40px;
 }
 
 .main-content::-webkit-scrollbar {
@@ -258,12 +242,59 @@ body {
   font-size: 14px;
 }
 
+/* ─── Main Content Header ─── */
+.main-content-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+/* ─── View Toggle ─── */
+.view-toggle {
+  display: flex;
+  gap: 2px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+
+.view-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 28px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.view-toggle-btn:hover {
+  color: var(--text-secondary);
+}
+
+.view-toggle-btn.active {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
 /* ─── Book List ─── */
 .book-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
   max-width: 700px;
+}
+
+/* ─── Book Grid ─── */
+.book-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
 }
 
 /* ─── Book Card ─── */
@@ -351,12 +382,13 @@ body {
 }
 
 .status-finished {
-  background: rgba(37, 103, 30, 0.2);
-  color: #6dc955;
+  background: var(--accent-deep);
+  color: #fff;
 }
 
 [data-theme="light"] .status-finished {
-  color: #25671e;
+  background: var(--accent-deep);
+  color: #fff;
 }
 
 [data-theme="light"] .status-reading {
@@ -367,63 +399,9 @@ body {
   color: #b8900a;
 }
 
-/* ─── Progress ─── */
-.book-progress {
-  margin-bottom: 8px;
-}
-
-.progress-bar {
-  height: 4px;
-  background: var(--bg-tertiary);
-  border-radius: 2px;
-  overflow: hidden;
+/* ─── Book Card Rating ─── */
+.book-card-rating {
   margin-bottom: 6px;
-}
-
-.progress-fill {
-  height: 100%;
-  background: var(--accent);
-  border-radius: 2px;
-  transition: width 0.3s ease;
-}
-
-.progress-text {
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.progress-btn {
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  font-size: 12px;
-  cursor: pointer;
-  padding: 0;
-  transition: color 0.15s;
-}
-
-.progress-btn:hover {
-  color: var(--text-primary);
-}
-
-.progress-edit {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.progress-edit input {
-  width: 60px;
-  padding: 2px 6px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--text-primary);
-  font-size: 12px;
-}
-
-.progress-edit span {
-  color: var(--text-secondary);
 }
 
 /* ─── Book Actions ─── */
@@ -447,7 +425,7 @@ body {
   border: none;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
   background: var(--bg-tertiary);
   color: var(--text-secondary);
 }
@@ -592,7 +570,7 @@ body {
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 .btn-secondary:hover {
@@ -742,7 +720,7 @@ body {
   color: var(--text-secondary);
   font-size: 13px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 .manual-entry-btn:hover {
@@ -783,20 +761,89 @@ body {
   opacity: 1;
 }
 
-/* ─── Sidebar Collapse ─── */
-.sidebar {
-  transition: width 0.2s ease, padding 0.2s ease;
+/* ─── Book Card Grid ─── */
+.book-card-grid {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: border-color 0.15s ease;
 }
 
+.book-card-grid:hover {
+  border-color: var(--border-hover);
+}
+
+.book-card-grid.book-card-selected {
+  border-color: var(--accent);
+}
+
+.book-grid-cover {
+  width: 100%;
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.book-grid-cover-img {
+  object-fit: cover;
+}
+
+.book-grid-cover-fallback {
+  background: var(--accent-deep);
+}
+
+.book-grid-cover-letter {
+  font-size: 36px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.book-grid-info {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.book-grid-title {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.book-grid-author {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.book-grid-rating {
+  margin: 2px 0;
+}
+
+.book-card-grid .status-badge {
+  align-self: flex-start;
+  margin-top: 4px;
+}
+
+/* ─── Sidebar Collapse ─── */
 .sidebar.collapsed {
   width: 0;
   padding: 0;
   overflow: hidden;
   border-right-color: transparent;
-}
-
-.main-content {
-  transition: flex 0.2s ease;
+  transition: width 0.2s ease, padding 0.2s ease, border-right-color 0.2s ease;
 }
 
 /* ─── Book Detail Modal ─── */
@@ -844,10 +891,6 @@ body {
   color: var(--text-secondary);
 }
 
-.book-detail-progress {
-  margin-bottom: 16px;
-}
-
 .book-detail-meta {
   font-size: 12px;
   color: var(--text-muted);
@@ -868,4 +911,420 @@ body {
 .delete-detail-btn:hover {
   background: rgba(244, 63, 94, 0.12);
   color: var(--danger);
+}
+
+/* ─── Sidebar Divider ─── */
+.sidebar-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 8px 0;
+}
+
+/* ─── Settings Button ─── */
+.settings-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.settings-btn:hover {
+  color: var(--text-primary);
+}
+
+/* ─── Status Selector ─── */
+.status-selector {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.status-segment {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 4px;
+  background: none;
+  border: none;
+  border-right: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.status-segment:last-child {
+  border-right: none;
+}
+
+.status-segment:hover {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+}
+
+.status-segment.active {
+  background: var(--accent);
+  color: white;
+}
+
+/* ─── Star Rating ─── */
+.star-rating {
+  display: flex;
+  gap: 2px;
+}
+
+.star-rating.interactive .star-btn {
+  cursor: pointer;
+}
+
+.star-btn {
+  background: none;
+  border: none;
+  padding: 1px;
+  cursor: default;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s ease;
+}
+
+.star-rating.interactive .star-btn:hover {
+  transform: scale(1.15);
+}
+
+/* ─── Tag Pills ─── */
+.tag-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag-pill {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--text-muted);
+  cursor: default;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.tag-pill:not(:disabled) {
+  cursor: pointer;
+}
+
+.tag-pill:not(:disabled):hover {
+  border-color: var(--text-muted);
+  color: var(--text-secondary);
+}
+
+.tag-pill.selected {
+  background: rgba(72, 161, 17, 0.15);
+  border-color: var(--accent);
+  color: var(--accent-hover);
+}
+
+[data-theme="light"] .tag-pill.selected {
+  color: var(--accent);
+}
+
+/* ─── Book Detail Sections ─── */
+.book-detail-section {
+  margin-bottom: 16px;
+}
+
+.section-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+/* ─── Review Textarea ─── */
+.review-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.15s ease;
+  min-height: 80px;
+}
+
+.review-textarea:focus {
+  border-color: var(--accent);
+}
+
+.review-textarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* ─── Discover View ─── */
+.discover-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  text-align: center;
+  color: var(--text-secondary);
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.discover-empty svg {
+  margin-bottom: 16px;
+  color: var(--text-muted);
+}
+
+.discover-empty h2 {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.discover-empty p {
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.discover-empty-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.discover-empty-actions .btn-primary,
+.discover-empty-actions .btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.discover-empty-actions svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+.discover-view {
+  max-width: 600px;
+}
+
+.discover-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.discover-title {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.discover-refresh {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+
+.discover-refresh .search-spinner {
+  position: static;
+}
+
+.discover-error {
+  padding: 16px;
+  background: rgba(229, 77, 58, 0.1);
+  border: 1px solid rgba(229, 77, 58, 0.3);
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.discover-error p {
+  font-size: 13px;
+  color: var(--danger);
+}
+
+.discover-error .btn-secondary {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+}
+
+.recommendation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.recommendation-card {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  transition: border-color 0.15s ease;
+}
+
+.recommendation-card:hover {
+  border-color: var(--border-hover);
+}
+
+.recommendation-number {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.recommendation-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.recommendation-title {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: 2px;
+}
+
+.recommendation-author {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.recommendation-reason {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* ─── Settings Modal ─── */
+.settings-modal {
+  width: 420px;
+}
+
+.theme-toggle-setting {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+  align-self: flex-start;
+}
+
+.theme-toggle-setting:hover {
+  border-color: var(--border-hover);
+}
+
+.theme-toggle-setting svg {
+  display: block;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.form-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.text-link {
+  color: var(--accent);
+}
+
+.api-key-input {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.api-key-input input {
+  width: 100%;
+  padding: 10px 40px 10px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: monospace;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.api-key-input input:focus {
+  border-color: var(--accent);
+}
+
+.api-key-input input::placeholder {
+  color: var(--text-muted);
+  font-family: monospace;
+}
+
+.key-toggle {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.key-toggle:hover {
+  color: var(--text-primary);
 }

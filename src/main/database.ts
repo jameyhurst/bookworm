@@ -6,10 +6,10 @@ export interface Book {
   id: number
   title: string
   author: string
-  totalPages: number
-  currentPage: number
   status: 'want-to-read' | 'reading' | 'finished'
   rating: number | null
+  review: string | null
+  tags: string[]
   coverId: number | null
   dateAdded: string
   dateFinished: string | null
@@ -17,9 +17,14 @@ export interface Book {
 
 export type NewBook = Omit<Book, 'id' | 'dateAdded' | 'dateFinished'>
 
+export interface Settings {
+  claudeApiKey: string | null
+}
+
 interface Store {
   books: Book[]
   nextId: number
+  settings: Settings
 }
 
 export class Database {
@@ -33,10 +38,27 @@ export class Database {
 
   private load(): Store {
     if (existsSync(this.filePath)) {
-      const data = readFileSync(this.filePath, 'utf-8')
-      return JSON.parse(data)
+      const data = JSON.parse(readFileSync(this.filePath, 'utf-8'))
+
+      // Migrate: strip old progress fields, add new fields
+      if (data.books) {
+        data.books = data.books.map((b: any) => {
+          delete b.totalPages
+          delete b.currentPage
+          if (b.review === undefined) b.review = null
+          if (!Array.isArray(b.tags)) b.tags = []
+          return b
+        })
+      }
+
+      // Ensure settings exist
+      if (!data.settings) {
+        data.settings = { claudeApiKey: null }
+      }
+
+      return data
     }
-    return { books: [], nextId: 1 }
+    return { books: [], nextId: 1, settings: { claudeApiKey: null } }
   }
 
   private save(): void {
@@ -54,7 +76,7 @@ export class Database {
       ...book,
       id: this.store.nextId++,
       dateAdded: new Date().toISOString(),
-      dateFinished: null
+      dateFinished: book.status === 'finished' ? new Date().toISOString() : null
     }
     this.store.books.push(newBook)
     this.save()
@@ -65,26 +87,36 @@ export class Database {
     const index = this.store.books.findIndex((b) => b.id === id)
     if (index === -1) throw new Error(`Book ${id} not found`)
 
-    this.store.books[index] = { ...this.store.books[index], ...updates }
+    const oldBook = this.store.books[index]
+
+    // Auto-manage dateFinished on status transitions
+    if (updates.status && updates.status !== oldBook.status) {
+      if (updates.status === 'finished' && oldBook.status !== 'finished') {
+        updates = { ...updates }
+        ;(updates as any).dateFinished = new Date().toISOString()
+      } else if (updates.status !== 'finished' && oldBook.status === 'finished') {
+        updates = { ...updates }
+        ;(updates as any).dateFinished = null
+      }
+    }
+
+    this.store.books[index] = { ...oldBook, ...updates }
     this.save()
     return this.store.books[index]
-  }
-
-  updateProgress(id: number, currentPage: number): Book {
-    const index = this.store.books.findIndex((b) => b.id === id)
-    if (index === -1) throw new Error(`Book ${id} not found`)
-
-    const book = this.store.books[index]
-    book.currentPage = currentPage
-    book.status = currentPage >= book.totalPages ? 'finished' : 'reading'
-    book.dateFinished = book.status === 'finished' ? new Date().toISOString() : null
-
-    this.save()
-    return book
   }
 
   deleteBook(id: number): void {
     this.store.books = this.store.books.filter((b) => b.id !== id)
     this.save()
+  }
+
+  getSettings(): Settings {
+    return { ...this.store.settings }
+  }
+
+  updateSettings(updates: Partial<Settings>): Settings {
+    this.store.settings = { ...this.store.settings, ...updates }
+    this.save()
+    return this.store.settings
   }
 }

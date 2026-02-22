@@ -28,7 +28,6 @@ export function AddBookModal({ onAdd, onClose }: AddBookModalProps): JSX.Element
   // Form state
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('')
-  const [totalPages, setTotalPages] = useState('')
   const [status, setStatus] = useState<BookStatus>('want-to-read')
   const [coverId, setCoverId] = useState<number | null>(null)
   const [downloadingCover, setDownloadingCover] = useState(false)
@@ -58,7 +57,6 @@ export function AddBookModal({ onAdd, onClose }: AddBookModalProps): JSX.Element
   const handleSelectResult = async (result: SearchResult): Promise<void> => {
     setTitle(result.title)
     setAuthor(result.author)
-    setTotalPages(result.pageCount ? String(result.pageCount) : '')
     setView('form')
 
     if (result.coverId) {
@@ -76,10 +74,10 @@ export function AddBookModal({ onAdd, onClose }: AddBookModalProps): JSX.Element
     onAdd({
       title: title.trim(),
       author: author.trim(),
-      totalPages: parseInt(totalPages) || 0,
-      currentPage: 0,
       status,
       rating: null,
+      review: null,
+      tags: [],
       coverId
     })
   }
@@ -183,18 +181,6 @@ export function AddBookModal({ onAdd, onClose }: AddBookModalProps): JSX.Element
                 value={author}
                 onChange={(e) => setAuthor(e.target.value)}
                 placeholder="Author name"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="pages">Total Pages</label>
-              <input
-                id="pages"
-                type="number"
-                value={totalPages}
-                onChange={(e) => setTotalPages(e.target.value)}
-                placeholder="Number of pages"
-                min={0}
               />
             </div>
 

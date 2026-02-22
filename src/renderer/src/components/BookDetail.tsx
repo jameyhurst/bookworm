@@ -1,40 +1,53 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { X, Trash2 } from 'lucide-react'
 import { Book } from '../App'
+import { StatusSelector } from './StatusSelector'
+import { StarRating } from './StarRating'
+import { TagPills } from './TagPills'
+import { MOOD_TAGS } from '../constants'
 
 interface BookDetailProps {
   book: Book
-  onUpdateProgress: (id: number, currentPage: number) => void
+  initialFocus?: 'default' | 'review'
+  onUpdateBook: (id: number, updates: Partial<Book>) => void
   onDelete: (id: number) => void
   onClose: () => void
 }
 
-const statusLabels = {
-  'want-to-read': 'Want to Read',
-  reading: 'Reading',
-  finished: 'Finished'
-}
-
 export function BookDetail({
   book,
-  onUpdateProgress,
+  initialFocus = 'default',
+  onUpdateBook,
   onDelete,
   onClose
 }: BookDetailProps): JSX.Element {
-  const [isEditing, setIsEditing] = useState(false)
-  const [pageInput, setPageInput] = useState(String(book.currentPage))
+  const [review, setReview] = useState(book.review || '')
+  const reviewRef = useRef<HTMLTextAreaElement>(null)
 
-  const progress = book.totalPages > 0 ? (book.currentPage / book.totalPages) * 100 : 0
-
-  const handleProgressSubmit = (): void => {
-    const page = Math.min(Math.max(0, parseInt(pageInput) || 0), book.totalPages)
-    onUpdateProgress(book.id, page)
-    setIsEditing(false)
-  }
+  useEffect(() => {
+    if (initialFocus === 'review' && reviewRef.current) {
+      reviewRef.current.focus()
+    }
+  }, [initialFocus])
 
   const handleDelete = (): void => {
     onDelete(book.id)
     onClose()
+  }
+
+  const handleReviewBlur = (): void => {
+    const trimmed = review.trim()
+    const newReview = trimmed || null
+    if (newReview !== book.review) {
+      onUpdateBook(book.id, { review: newReview })
+    }
+  }
+
+  const handleTagToggle = (tag: string): void => {
+    const newTags = book.tags.includes(tag)
+      ? book.tags.filter((t) => t !== tag)
+      : [...book.tags, tag]
+    onUpdateBook(book.id, { tags: newTags })
   }
 
   return (
@@ -64,45 +77,44 @@ export function BookDetail({
             <div className="book-detail-info">
               <h3 className="book-detail-title">{book.title}</h3>
               <p className="book-detail-author">{book.author}</p>
-              <span className={`status-badge status-${book.status}`}>
-                {statusLabels[book.status]}
-              </span>
+              <StatusSelector
+                status={book.status}
+                onChange={(status) => onUpdateBook(book.id, { status })}
+              />
             </div>
           </div>
 
-          {book.totalPages > 0 && (
-            <div className="book-detail-progress">
-              <div className="progress-bar">
-                <div className="progress-fill" style={{ width: `${progress}%` }} />
-              </div>
-              <div className="progress-text">
-                {isEditing ? (
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault()
-                      handleProgressSubmit()
-                    }}
-                    className="progress-edit"
-                  >
-                    <input
-                      type="number"
-                      value={pageInput}
-                      onChange={(e) => setPageInput(e.target.value)}
-                      min={0}
-                      max={book.totalPages}
-                      autoFocus
-                      onBlur={handleProgressSubmit}
-                    />
-                    <span>/ {book.totalPages} pages</span>
-                  </form>
-                ) : (
-                  <button className="progress-btn" onClick={() => setIsEditing(true)}>
-                    {book.currentPage} / {book.totalPages} pages ({Math.round(progress)}%)
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
+          <div className="book-detail-section">
+            <label className="section-label">Rating</label>
+            <StarRating
+              rating={book.rating}
+              onRate={(rating) => onUpdateBook(book.id, { rating })}
+              size={22}
+            />
+          </div>
+
+          <div className="book-detail-section">
+            <label className="section-label">Mood</label>
+            <TagPills
+              tags={MOOD_TAGS}
+              selectedTags={book.tags}
+              interactive
+              onToggle={handleTagToggle}
+            />
+          </div>
+
+          <div className="book-detail-section">
+            <label className="section-label">Review</label>
+            <textarea
+              ref={reviewRef}
+              className="review-textarea"
+              value={review}
+              onChange={(e) => setReview(e.target.value)}
+              onBlur={handleReviewBlur}
+              placeholder="What did you think of this book?"
+              rows={4}
+            />
+          </div>
 
           {book.dateAdded && (
             <p className="book-detail-meta">

@@ -10,6 +10,7 @@ export interface BookAPI {
   getSettings: () => Promise<any>
   updateSettings: (updates: any) => Promise<any>
   getRecommendations: () => Promise<any>
+  syncTheme: (theme: string) => Promise<void>
 }
 
 const api: BookAPI = {
@@ -21,7 +22,8 @@ const api: BookAPI = {
   downloadCover: (coverId) => ipcRenderer.invoke('books:downloadCover', coverId),
   getSettings: () => ipcRenderer.invoke('settings:get'),
   updateSettings: (updates) => ipcRenderer.invoke('settings:update', updates),
-  getRecommendations: () => ipcRenderer.invoke('discover:getRecommendations')
+  getRecommendations: () => ipcRenderer.invoke('discover:getRecommendations'),
+  syncTheme: (theme) => ipcRenderer.invoke('theme:sync', theme)
 }
 
 contextBridge.exposeInMainWorld('api', api)

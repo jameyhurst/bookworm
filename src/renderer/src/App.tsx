@@ -5,8 +5,11 @@ import { BookDetail } from './components/BookDetail'
 import { AddBookModal } from './components/AddBookModal'
 import { DiscoverView } from './components/DiscoverView'
 import { SettingsModal } from './components/SettingsModal'
+import { HelpModal } from './components/HelpModal'
 import { ViewToggle, type ViewMode } from './components/ViewToggle'
+import { SortToggle } from './components/SortToggle'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
+import { PanelLeftOpen } from 'lucide-react'
 
 export type BookStatus = 'want-to-read' | 'reading' | 'finished'
 
@@ -28,10 +31,12 @@ function App(): JSX.Element {
   const [activeFilter, setActiveFilter] = useState<BookStatus | 'all' | 'discover'>('all')
   const [showAddModal, setShowAddModal] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [showHelp, setShowHelp] = useState(false)
   const [selectedBookIndex, setSelectedBookIndex] = useState<number | null>(null)
   const [showDetail, setShowDetail] = useState(false)
   const [detailFocus, setDetailFocus] = useState<'default' | 'review'>('default')
   const [sidebarVisible, setSidebarVisible] = useState(true)
+  const [sortBy, setSortBy] = useState<'default' | 'title' | 'author'>('default')
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     return (localStorage.getItem('bookworm-theme') as 'dark' | 'light') || 'dark'
   })
@@ -42,6 +47,7 @@ function App(): JSX.Element {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
     localStorage.setItem('bookworm-theme', theme)
+    window.api.syncTheme(theme)
   }, [theme])
 
   useEffect(() => {
@@ -59,10 +65,17 @@ function App(): JSX.Element {
     loadBooks()
   }, [loadBooks])
 
-  const filteredBooks =
+  const filtered =
     activeFilter === 'all' || activeFilter === 'discover'
       ? books
       : books.filter((b) => b.status === activeFilter)
+
+  const filteredBooks =
+    sortBy === 'title'
+      ? [...filtered].sort((a, b) => a.title.localeCompare(b.title))
+      : sortBy === 'author'
+        ? [...filtered].sort((a, b) => a.author.localeCompare(b.author))
+        : filtered
 
   // Reset selection when filter changes
   useEffect(() => {
@@ -94,57 +107,81 @@ function App(): JSX.Element {
     setSelectedBookIndex(null)
   }
 
+  const anyModal = showAddModal || showDetail || showSettings || showHelp
+
   useKeyboardShortcuts({
     onAddBook: () => {
-      if (!showAddModal && !showDetail && !showSettings) setShowAddModal(true)
+      if (!anyModal) setShowAddModal(true)
     },
     onToggleSidebar: () => {
-      if (!showAddModal && !showDetail && !showSettings) setSidebarVisible((v) => !v)
+      if (!anyModal) setSidebarVisible((v) => !v)
     },
     onGoToFilter: (filter) => {
-      if (!showAddModal && !showDetail && !showSettings)
-        setActiveFilter(filter as BookStatus | 'all' | 'discover')
+      if (!anyModal) setActiveFilter(filter as BookStatus | 'all' | 'discover')
     },
     onNavigate: (direction) => {
-      if (showAddModal || showDetail || showSettings || filteredBooks.length === 0 || activeFilter === 'discover') return
+      if (anyModal || filteredBooks.length === 0 || activeFilter === 'discover') return
+      if (viewMode === 'list' && (direction === 'left' || direction === 'right')) return
+
       setSelectedBookIndex((prev) => {
         if (prev === null) return 0
-        if (direction === 'down') return Math.min(prev + 1, filteredBooks.length - 1)
-        return Math.max(prev - 1, 0)
+
+        let step = 1
+        if (viewMode === 'grid' && (direction === 'up' || direction === 'down')) {
+          const grid = document.querySelector('.book-grid')
+          if (grid && grid.children.length > 1) {
+            const firstTop = (grid.children[0] as HTMLElement).offsetTop
+            let cols = 1
+            while (cols < grid.children.length && (grid.children[cols] as HTMLElement).offsetTop === firstTop) {
+              cols++
+            }
+            step = cols
+          }
+        }
+
+        if (direction === 'down' || direction === 'right') return Math.min(prev + step, filteredBooks.length - 1)
+        return Math.max(prev - step, 0)
       })
     },
     onOpenSelected: () => {
-      if (showAddModal || showDetail || showSettings) return
+      if (anyModal) return
       if (selectedBookIndex !== null && filteredBooks[selectedBookIndex]) {
         setDetailFocus('default')
         setShowDetail(true)
       }
     },
     onRateSelected: (rating) => {
-      if (showAddModal || showSettings) return
+      if (showAddModal || showSettings || showHelp) return
       if (selectedBookIndex !== null && filteredBooks[selectedBookIndex]) {
         handleUpdateBook(filteredBooks[selectedBookIndex].id, { rating })
       }
     },
     onSetStatusSelected: (status) => {
-      if (showAddModal || showSettings) return
+      if (showAddModal || showSettings || showHelp) return
       if (selectedBookIndex !== null && filteredBooks[selectedBookIndex]) {
         handleUpdateBook(filteredBooks[selectedBookIndex].id, { status: status as BookStatus })
       }
     },
     onEditReview: () => {
-      if (showAddModal || showSettings) return
+      if (showAddModal || showSettings || showHelp) return
       if (selectedBookIndex !== null && filteredBooks[selectedBookIndex]) {
         setDetailFocus('review')
         setShowDetail(true)
       }
     },
     onToggleView: () => {
-      if (!showAddModal && !showDetail && !showSettings)
-        setViewMode((m) => (m === 'list' ? 'grid' : 'list'))
+      if (!anyModal) setViewMode((m) => (m === 'list' ? 'grid' : 'list'))
+    },
+    onShowHelp: () => {
+      if (!anyModal) setShowHelp(true)
+    },
+    onSortBy: (sort) => {
+      if (!anyModal) setSortBy((prev) => prev === sort ? 'default' : sort as 'title' | 'author')
     },
     onEscape: () => {
-      if (showSettings) {
+      if (showHelp) {
+        setShowHelp(false)
+      } else if (showSettings) {
         setShowSettings(false)
       } else if (showAddModal) {
         setShowAddModal(false)
@@ -173,16 +210,35 @@ function App(): JSX.Element {
         counts={counts}
         onAddBook={() => setShowAddModal(true)}
         onOpenSettings={() => setShowSettings(true)}
+        onOpenHelp={() => setShowHelp(true)}
         visible={sidebarVisible}
       />
-      <main className="main-content">
-        {activeFilter === 'discover' ? (
-          <DiscoverView onOpenSettings={() => setShowSettings(true)} />
-        ) : (
-          <>
-            <div className="main-content-header">
-              <ViewToggle mode={viewMode} onChange={setViewMode} />
-            </div>
+      <div className={`main-panel${!sidebarVisible ? ' sidebar-hidden' : ''}`}>
+        <div className="main-toolbar">
+          <div className="main-toolbar-left">
+            {!sidebarVisible && (
+              <button
+                className="sidebar-show-btn"
+                onClick={() => setSidebarVisible(true)}
+                title="Show sidebar (b)"
+              >
+                <PanelLeftOpen size={18} />
+              </button>
+            )}
+          </div>
+          <div className="main-toolbar-right">
+            {activeFilter !== 'discover' && (
+              <>
+                <SortToggle mode={sortBy} onChange={setSortBy} />
+                <ViewToggle mode={viewMode} onChange={setViewMode} />
+              </>
+            )}
+          </div>
+        </div>
+        <main className="main-content">
+          {activeFilter === 'discover' ? (
+            <DiscoverView onOpenSettings={() => setShowSettings(true)} />
+          ) : (
             <BookList
               books={filteredBooks}
               selectedBookIndex={selectedBookIndex}
@@ -191,11 +247,15 @@ function App(): JSX.Element {
               onUpdateBook={handleUpdateBook}
               onDelete={handleDeleteBook}
             />
-          </>
-        )}
-      </main>
+          )}
+        </main>
+      </div>
       {showAddModal && (
-        <AddBookModal onAdd={handleAddBook} onClose={() => setShowAddModal(false)} />
+        <AddBookModal
+          onAdd={handleAddBook}
+          onClose={() => setShowAddModal(false)}
+          defaultStatus={activeFilter !== 'all' && activeFilter !== 'discover' ? activeFilter : undefined}
+        />
       )}
       {showDetail && selectedBook && (
         <BookDetail
@@ -208,6 +268,9 @@ function App(): JSX.Element {
       )}
       {showSettings && (
         <SettingsModal onClose={() => setShowSettings(false)} theme={theme} onToggleTheme={toggleTheme} />
+      )}
+      {showHelp && (
+        <HelpModal onClose={() => setShowHelp(false)} />
       )}
     </div>
   )

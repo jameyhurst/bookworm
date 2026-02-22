@@ -1,4 +1,4 @@
-import { Library, BookOpen, Sparkles, CheckCircle, Plus, Compass, Settings, type LucideIcon } from 'lucide-react'
+import { Library, BookOpen, Sparkles, CheckCircle, Plus, Compass, Settings, HelpCircle, type LucideIcon } from 'lucide-react'
 import { BookStatus } from '../App'
 import appIcon from '../../../../resources/icon-transparent.png'
 
@@ -8,17 +8,18 @@ interface SidebarProps {
   counts: Record<BookStatus | 'all', number>
   onAddBook: () => void
   onOpenSettings: () => void
+  onOpenHelp: () => void
   visible: boolean
 }
 
 const filters: { key: BookStatus | 'all'; label: string; icon: LucideIcon }[] = [
   { key: 'all', label: 'All Books', icon: Library },
-  { key: 'reading', label: 'Reading', icon: BookOpen },
+  { key: 'reading', label: 'Currently Reading', icon: BookOpen },
   { key: 'want-to-read', label: 'Want to Read', icon: Sparkles },
-  { key: 'finished', label: 'Finished', icon: CheckCircle }
+  { key: 'finished', label: 'Read Books', icon: CheckCircle }
 ]
 
-export function Sidebar({ activeFilter, onFilterChange, counts, onAddBook, onOpenSettings, visible }: SidebarProps): JSX.Element {
+export function Sidebar({ activeFilter, onFilterChange, counts, onAddBook, onOpenSettings, onOpenHelp, visible }: SidebarProps): JSX.Element {
   return (
     <aside className={`sidebar${visible ? '' : ' collapsed'}`}>
       <div className="sidebar-header">
@@ -61,6 +62,9 @@ export function Sidebar({ activeFilter, onFilterChange, counts, onAddBook, onOpe
       <div className="sidebar-footer">
         <button className="settings-btn" onClick={onOpenSettings} title="Settings">
           <Settings size={16} />
+        </button>
+        <button className="settings-btn" onClick={onOpenHelp} title="Keyboard shortcuts (?)">
+          <HelpCircle size={16} />
         </button>
         <span className="app-version">v0.2.0</span>
       </div>

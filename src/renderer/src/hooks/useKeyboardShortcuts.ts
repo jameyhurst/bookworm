@@ -4,16 +4,18 @@ export interface ShortcutCallbacks {
   onAddBook: () => void
   onToggleSidebar: () => void
   onGoToFilter: (filter: string) => void
-  onNavigate: (direction: 'up' | 'down') => void
+  onNavigate: (direction: 'up' | 'down' | 'left' | 'right') => void
   onOpenSelected: () => void
   onEscape: () => void
   onRateSelected: (rating: number | null) => void
   onSetStatusSelected: (status: string) => void
   onEditReview: () => void
   onToggleView: () => void
+  onShowHelp: () => void
+  onSortBy: (sort: string) => void
 }
 
-type ChordKey = 'g' | 'r' | 'm' | null
+type ChordKey = 'g' | 'r' | 'm' | 's' | null
 
 const CHORD_TIMEOUT = 500
 
@@ -53,9 +55,16 @@ export function useKeyboardShortcuts(callbacks: ShortcutCallbacks): {
       if (key === 'Escape') {
         if (pendingKeyRef.current) {
           clearChord()
-        } else {
-          cbRef.current.onEscape()
+          return
         }
+        // If focus is on an input, blur it first so shortcuts resume
+        const activeEl = document.activeElement as HTMLElement
+        const activeTag = activeEl?.tagName
+        if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') {
+          activeEl.blur()
+          return
+        }
+        cbRef.current.onEscape()
         return
       }
 
@@ -71,10 +80,10 @@ export function useKeyboardShortcuts(callbacks: ShortcutCallbacks): {
 
         if (pending === 'g') {
           const chordMap: Record<string, string> = {
-            b: 'all',
-            r: 'reading',
+            a: 'all',
             w: 'want-to-read',
-            f: 'finished',
+            c: 'reading',
+            r: 'finished',
             d: 'discover'
           }
           if (chordMap[key]) cbRef.current.onGoToFilter(chordMap[key])
@@ -87,10 +96,16 @@ export function useKeyboardShortcuts(callbacks: ShortcutCallbacks): {
         } else if (pending === 'm') {
           const statusMap: Record<string, string> = {
             w: 'want-to-read',
-            r: 'reading',
-            f: 'finished'
+            c: 'reading',
+            r: 'finished'
           }
           if (statusMap[key]) cbRef.current.onSetStatusSelected(statusMap[key])
+        } else if (pending === 's') {
+          const sortMap: Record<string, string> = {
+            a: 'author',
+            t: 'title'
+          }
+          if (sortMap[key]) cbRef.current.onSortBy(sortMap[key])
         }
         return
       }
@@ -105,7 +120,7 @@ export function useKeyboardShortcuts(callbacks: ShortcutCallbacks): {
           e.preventDefault()
           cbRef.current.onGoToFilter('discover')
           break
-        case 's':
+        case 'b':
           e.preventDefault()
           cbRef.current.onToggleSidebar()
           break
@@ -120,6 +135,7 @@ export function useKeyboardShortcuts(callbacks: ShortcutCallbacks): {
         case 'g':
         case 'r':
         case 'm':
+        case 's':
           e.preventDefault()
           startChord(key as ChordKey)
           break
@@ -130,6 +146,18 @@ export function useKeyboardShortcuts(callbacks: ShortcutCallbacks): {
         case 'ArrowDown':
           e.preventDefault()
           cbRef.current.onNavigate('down')
+          break
+        case 'ArrowLeft':
+          e.preventDefault()
+          cbRef.current.onNavigate('left')
+          break
+        case 'ArrowRight':
+          e.preventDefault()
+          cbRef.current.onNavigate('right')
+          break
+        case '?':
+          e.preventDefault()
+          cbRef.current.onShowHelp()
           break
         case 'o':
         case 'Enter':

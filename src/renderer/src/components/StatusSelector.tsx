@@ -8,8 +8,8 @@ interface StatusSelectorProps {
 
 const statuses: { key: BookStatus; label: string; icon: typeof Sparkles }[] = [
   { key: 'want-to-read', label: 'Want to Read', icon: Sparkles },
-  { key: 'reading', label: 'Reading', icon: BookOpen },
-  { key: 'finished', label: 'Finished', icon: CheckCircle }
+  { key: 'reading', label: 'Currently Reading', icon: BookOpen },
+  { key: 'finished', label: 'Read', icon: CheckCircle }
 ]
 
 export function StatusSelector({ status, onChange }: StatusSelectorProps): JSX.Element {

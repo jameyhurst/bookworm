@@ -1,6 +1,14 @@
 node_modules/
 out/
 dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
 *.dmg
 *.db
+
+# App data
 bookworm-data.json

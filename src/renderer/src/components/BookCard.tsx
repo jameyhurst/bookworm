@@ -1,11 +1,15 @@
-import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import { Book } from '../App'
+import { StarRating } from './StarRating'
+import { TagPills } from './TagPills'
+import type { ViewMode } from './ViewToggle'
 
 interface BookCardProps {
   book: Book
   isSelected: boolean
-  onUpdateProgress: (id: number, currentPage: number) => void
+  viewMode: ViewMode
+  onOpen: () => void
+  onUpdateBook: (id: number, updates: Partial<Book>) => void
   onDelete: (id: number) => void
 }
 
@@ -15,20 +19,43 @@ const statusLabels = {
   finished: 'Finished'
 }
 
-export function BookCard({ book, isSelected, onUpdateProgress, onDelete }: BookCardProps): JSX.Element {
-  const [isEditing, setIsEditing] = useState(false)
-  const [pageInput, setPageInput] = useState(String(book.currentPage))
-
-  const progress = book.totalPages > 0 ? (book.currentPage / book.totalPages) * 100 : 0
-
-  const handleProgressSubmit = (): void => {
-    const page = Math.min(Math.max(0, parseInt(pageInput) || 0), book.totalPages)
-    onUpdateProgress(book.id, page)
-    setIsEditing(false)
+export function BookCard({ book, isSelected, viewMode, onOpen, onDelete }: BookCardProps): JSX.Element {
+  if (viewMode === 'grid') {
+    return (
+      <div
+        className={`book-card-grid${isSelected ? ' book-card-selected' : ''}`}
+        onClick={onOpen}
+        style={{ cursor: 'pointer' }}
+      >
+        {book.coverId ? (
+          <img
+            className="book-grid-cover book-grid-cover-img"
+            src={`covers://local/${book.coverId}.jpg`}
+            alt=""
+          />
+        ) : (
+          <div className="book-grid-cover book-grid-cover-fallback">
+            <span className="book-grid-cover-letter">{book.title[0]?.toUpperCase()}</span>
+          </div>
+        )}
+        <div className="book-grid-info">
+          <h3 className="book-grid-title">{book.title}</h3>
+          <p className="book-grid-author">{book.author}</p>
+          {book.rating !== null && (
+            <div className="book-grid-rating">
+              <StarRating rating={book.rating} size={12} />
+            </div>
+          )}
+          <span className={`status-badge status-${book.status}`}>
+            {statusLabels[book.status]}
+          </span>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className={`book-card${isSelected ? ' book-card-selected' : ''}`}>
+    <div className={`book-card${isSelected ? ' book-card-selected' : ''}`} onClick={onOpen} style={{ cursor: 'pointer' }}>
       {book.coverId ? (
         <img
           className="book-cover book-cover-img"
@@ -52,42 +79,18 @@ export function BookCard({ book, isSelected, onUpdateProgress, onDelete }: BookC
           </span>
         </div>
 
-        {book.totalPages > 0 && (
-          <div className="book-progress">
-            <div className="progress-bar">
-              <div className="progress-fill" style={{ width: `${progress}%` }} />
-            </div>
-            <div className="progress-text">
-              {isEditing ? (
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault()
-                    handleProgressSubmit()
-                  }}
-                  className="progress-edit"
-                >
-                  <input
-                    type="number"
-                    value={pageInput}
-                    onChange={(e) => setPageInput(e.target.value)}
-                    min={0}
-                    max={book.totalPages}
-                    autoFocus
-                    onBlur={handleProgressSubmit}
-                  />
-                  <span>/ {book.totalPages} pages</span>
-                </form>
-              ) : (
-                <button className="progress-btn" onClick={() => setIsEditing(true)}>
-                  {book.currentPage} / {book.totalPages} pages ({Math.round(progress)}%)
-                </button>
-              )}
-            </div>
+        {book.rating !== null && (
+          <div className="book-card-rating">
+            <StarRating rating={book.rating} size={14} />
           </div>
         )}
 
+        {book.tags.length > 0 && (
+          <TagPills tags={book.tags} selectedTags={book.tags} interactive={false} />
+        )}
+
         <div className="book-actions">
-          <button className="action-btn delete-btn" onClick={() => onDelete(book.id)}>
+          <button className="action-btn delete-btn" onClick={(e) => { e.stopPropagation(); onDelete(book.id) }}>
             <Trash2 size={13} />
             Remove
           </button>

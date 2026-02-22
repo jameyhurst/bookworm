@@ -5,9 +5,11 @@ export interface BookAPI {
   add: (book: any) => Promise<any>
   update: (id: number, updates: any) => Promise<any>
   delete: (id: number) => Promise<void>
-  updateProgress: (id: number, currentPage: number) => Promise<any>
   search: (query: string) => Promise<any[]>
   downloadCover: (coverId: number) => Promise<number | null>
+  getSettings: () => Promise<any>
+  updateSettings: (updates: any) => Promise<any>
+  getRecommendations: () => Promise<any>
 }
 
 const api: BookAPI = {
@@ -15,9 +17,11 @@ const api: BookAPI = {
   add: (book) => ipcRenderer.invoke('books:add', book),
   update: (id, updates) => ipcRenderer.invoke('books:update', id, updates),
   delete: (id) => ipcRenderer.invoke('books:delete', id),
-  updateProgress: (id, currentPage) => ipcRenderer.invoke('books:updateProgress', id, currentPage),
   search: (query) => ipcRenderer.invoke('books:search', query),
-  downloadCover: (coverId) => ipcRenderer.invoke('books:downloadCover', coverId)
+  downloadCover: (coverId) => ipcRenderer.invoke('books:downloadCover', coverId),
+  getSettings: () => ipcRenderer.invoke('settings:get'),
+  updateSettings: (updates) => ipcRenderer.invoke('settings:update', updates),
+  getRecommendations: () => ipcRenderer.invoke('discover:getRecommendations')
 }
 
 contextBridge.exposeInMainWorld('api', api)

@@ -4,6 +4,7 @@ import { readFile } from 'fs/promises'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { Database } from './database'
 import { searchBooks, downloadCover } from './openlibrary'
+import { getRecommendations } from './claude'
 
 let db: Database
 
@@ -86,13 +87,20 @@ function registerIpcHandlers(): void {
   ipcMain.handle('books:add', (_event, book) => db.addBook(book))
   ipcMain.handle('books:update', (_event, id, updates) => db.updateBook(id, updates))
   ipcMain.handle('books:delete', (_event, id) => db.deleteBook(id))
-  ipcMain.handle('books:updateProgress', (_event, id, currentPage) =>
-    db.updateProgress(id, currentPage)
-  )
-
   ipcMain.handle('books:search', (_event, query: string) => searchBooks(query))
   ipcMain.handle('books:downloadCover', async (_event, coverId: number) => {
     const path = await downloadCover(coverId)
     return path ? coverId : null
+  })
+
+  ipcMain.handle('settings:get', () => db.getSettings())
+  ipcMain.handle('settings:update', (_event, updates) => db.updateSettings(updates))
+  ipcMain.handle('discover:getRecommendations', async () => {
+    const settings = db.getSettings()
+    if (!settings.claudeApiKey) {
+      throw new Error('Please add your Claude API key in Settings first.')
+    }
+    const books = db.getAllBooks()
+    return getRecommendations(books, settings.claudeApiKey)
   })
 }

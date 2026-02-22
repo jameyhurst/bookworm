@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, net, protocol, nativeImage } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, net, protocol, nativeImage, nativeTheme } from 'electron'
 import { join } from 'path'
 import { readFile } from 'fs/promises'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -91,6 +91,10 @@ function registerIpcHandlers(): void {
   ipcMain.handle('books:downloadCover', async (_event, coverId: number) => {
     const path = await downloadCover(coverId)
     return path ? coverId : null
+  })
+
+  ipcMain.handle('theme:sync', (_event, theme: string) => {
+    nativeTheme.themeSource = theme as 'dark' | 'light'
   })
 
   ipcMain.handle('settings:get', () => db.getSettings())

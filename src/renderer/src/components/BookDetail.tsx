@@ -14,6 +14,14 @@ interface BookDetailProps {
   onClose: () => void
 }
 
+function titleHue(title: string): number {
+  let hash = 0
+  for (let i = 0; i < title.length; i++) {
+    hash = title.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return Math.abs(hash) % 360
+}
+
 export function BookDetail({
   book,
   initialFocus = 'default',
@@ -23,10 +31,15 @@ export function BookDetail({
 }: BookDetailProps): JSX.Element {
   const [review, setReview] = useState(book.review || '')
   const reviewRef = useRef<HTMLTextAreaElement>(null)
+  const overlayRef = useRef<HTMLDivElement>(null)
+  const hue = titleHue(book.title)
+  const fallbackBg = `linear-gradient(145deg, hsl(${hue}, 30%, 22%) 0%, hsl(${(hue + 40) % 360}, 25%, 16%) 100%)`
 
   useEffect(() => {
     if (initialFocus === 'review' && reviewRef.current) {
       reviewRef.current.focus()
+    } else {
+      overlayRef.current?.focus()
     }
   }, [initialFocus])
 
@@ -51,7 +64,7 @@ export function BookDetail({
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" ref={overlayRef} tabIndex={-1} onClick={onClose}>
       <div className="modal book-detail-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Book Details</h2>
@@ -69,7 +82,7 @@ export function BookDetail({
                 alt=""
               />
             ) : (
-              <div className="book-detail-cover book-cover-fallback">
+              <div className="book-detail-cover book-cover-fallback" style={{ background: fallbackBg }}>
                 <span className="book-cover-letter">{book.title[0]?.toUpperCase()}</span>
               </div>
             )}
@@ -120,7 +133,7 @@ export function BookDetail({
             <p className="book-detail-meta">
               Added {new Date(book.dateAdded).toLocaleDateString()}
               {book.dateFinished &&
-                ` · Finished ${new Date(book.dateFinished).toLocaleDateString()}`}
+                ` · Read ${new Date(book.dateFinished).toLocaleDateString()}`}
             </p>
           )}
 

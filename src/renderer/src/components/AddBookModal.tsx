@@ -5,6 +5,7 @@ import { Book, BookStatus } from '../App'
 interface AddBookModalProps {
   onAdd: (book: Omit<Book, 'id' | 'dateAdded' | 'dateFinished'>) => void
   onClose: () => void
+  defaultStatus?: BookStatus
 }
 
 interface SearchResult {
@@ -18,7 +19,7 @@ interface SearchResult {
 
 type ModalView = 'search' | 'form'
 
-export function AddBookModal({ onAdd, onClose }: AddBookModalProps): JSX.Element {
+export function AddBookModal({ onAdd, onClose, defaultStatus }: AddBookModalProps): JSX.Element {
   const [view, setView] = useState<ModalView>('search')
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
@@ -28,7 +29,7 @@ export function AddBookModal({ onAdd, onClose }: AddBookModalProps): JSX.Element
   // Form state
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('')
-  const [status, setStatus] = useState<BookStatus>('want-to-read')
+  const [status, setStatus] = useState<BookStatus>(defaultStatus ?? 'want-to-read')
   const [coverId, setCoverId] = useState<number | null>(null)
   const [downloadingCover, setDownloadingCover] = useState(false)
 
@@ -193,7 +194,7 @@ export function AddBookModal({ onAdd, onClose }: AddBookModalProps): JSX.Element
               >
                 <option value="want-to-read">Want to Read</option>
                 <option value="reading">Currently Reading</option>
-                <option value="finished">Finished</option>
+                <option value="finished">Read</option>
               </select>
             </div>
 

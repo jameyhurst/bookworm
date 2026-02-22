@@ -8,6 +8,7 @@ interface BookCardProps {
   book: Book
   isSelected: boolean
   viewMode: ViewMode
+  index: number
   onOpen: () => void
   onUpdateBook: (id: number, updates: Partial<Book>) => void
   onDelete: (id: number) => void
@@ -15,17 +16,29 @@ interface BookCardProps {
 
 const statusLabels = {
   'want-to-read': 'Want to Read',
-  reading: 'Reading',
-  finished: 'Finished'
+  reading: 'Currently Reading',
+  finished: 'Read'
 }
 
-export function BookCard({ book, isSelected, viewMode, onOpen, onDelete }: BookCardProps): JSX.Element {
+function titleHue(title: string): number {
+  let hash = 0
+  for (let i = 0; i < title.length; i++) {
+    hash = title.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return Math.abs(hash) % 360
+}
+
+export function BookCard({ book, isSelected, viewMode, index, onOpen, onDelete }: BookCardProps): JSX.Element {
+  const staggerDelay = Math.min(index * 50, 750)
+  const hue = titleHue(book.title)
+  const fallbackBg = `linear-gradient(145deg, hsl(${hue}, 30%, 22%) 0%, hsl(${(hue + 40) % 360}, 25%, 16%) 100%)`
+
   if (viewMode === 'grid') {
     return (
       <div
-        className={`book-card-grid${isSelected ? ' book-card-selected' : ''}`}
+        className={`book-card-grid book-card--${book.status}${isSelected ? ' book-card-selected' : ''}`}
         onClick={onOpen}
-        style={{ cursor: 'pointer' }}
+        style={{ cursor: 'pointer', animationDelay: `${staggerDelay}ms` }}
       >
         {book.coverId ? (
           <img
@@ -34,7 +47,10 @@ export function BookCard({ book, isSelected, viewMode, onOpen, onDelete }: BookC
             alt=""
           />
         ) : (
-          <div className="book-grid-cover book-grid-cover-fallback">
+          <div
+            className="book-grid-cover book-grid-cover-fallback"
+            style={{ background: fallbackBg }}
+          >
             <span className="book-grid-cover-letter">{book.title[0]?.toUpperCase()}</span>
           </div>
         )}
@@ -55,7 +71,11 @@ export function BookCard({ book, isSelected, viewMode, onOpen, onDelete }: BookC
   }
 
   return (
-    <div className={`book-card${isSelected ? ' book-card-selected' : ''}`} onClick={onOpen} style={{ cursor: 'pointer' }}>
+    <div
+      className={`book-card book-card--${book.status}${isSelected ? ' book-card-selected' : ''}`}
+      onClick={onOpen}
+      style={{ cursor: 'pointer', animationDelay: `${staggerDelay}ms` }}
+    >
       {book.coverId ? (
         <img
           className="book-cover book-cover-img"
@@ -63,32 +83,29 @@ export function BookCard({ book, isSelected, viewMode, onOpen, onDelete }: BookC
           alt=""
         />
       ) : (
-        <div className="book-cover book-cover-fallback">
+        <div
+          className="book-cover book-cover-fallback"
+          style={{ background: fallbackBg }}
+        >
           <span className="book-cover-letter">{book.title[0]?.toUpperCase()}</span>
         </div>
       )}
 
       <div className="book-info">
-        <div className="book-header">
-          <div>
-            <h3 className="book-title">{book.title}</h3>
-            <p className="book-author">{book.author}</p>
-          </div>
-          <span className={`status-badge status-${book.status}`}>
-            {statusLabels[book.status]}
-          </span>
-        </div>
+        <h3 className="book-title">{book.title}</h3>
+        <p className="book-author">{book.author}</p>
+      </div>
 
+      <div className="book-card-meta">
         {book.rating !== null && (
-          <div className="book-card-rating">
-            <StarRating rating={book.rating} size={14} />
-          </div>
+          <StarRating rating={book.rating} size={14} />
         )}
-
         {book.tags.length > 0 && (
           <TagPills tags={book.tags} selectedTags={book.tags} interactive={false} />
         )}
-
+        <span className={`status-badge status-${book.status}`}>
+          {statusLabels[book.status]}
+        </span>
         <div className="book-actions">
           <button className="action-btn delete-btn" onClick={(e) => { e.stopPropagation(); onDelete(book.id) }}>
             <Trash2 size={13} />

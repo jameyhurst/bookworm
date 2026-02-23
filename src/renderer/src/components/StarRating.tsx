@@ -19,9 +19,12 @@ export function StarRating({ rating, onRate, size = 18 }: StarRatingProps): JSX.
     onRate(star === rating ? null : star)
   }
 
+  const ratingLevel = displayRating === 0 ? 0 : displayRating <= 2 ? 1 : displayRating <= 4 ? 2 : 3
+
   return (
     <div
       className={`star-rating${interactive ? ' interactive' : ''}`}
+      data-level={ratingLevel}
       onMouseLeave={() => interactive && setHovered(null)}
     >
       {[1, 2, 3, 4, 5].map((star) => (
@@ -36,8 +39,8 @@ export function StarRating({ rating, onRate, size = 18 }: StarRatingProps): JSX.
         >
           <Star
             size={size}
-            fill={star <= displayRating ? 'var(--warning)' : 'none'}
-            stroke={star <= displayRating ? 'var(--warning)' : 'var(--text-muted)'}
+            fill={star <= displayRating ? 'currentColor' : 'none'}
+            stroke={star <= displayRating ? 'currentColor' : 'var(--text-muted)'}
             strokeWidth={1.5}
           />
         </button>

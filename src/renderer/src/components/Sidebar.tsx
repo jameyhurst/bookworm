@@ -1,10 +1,10 @@
-import { Library, BookOpen, Sparkles, CheckCircle, Plus, Compass, Settings, HelpCircle, type LucideIcon } from 'lucide-react'
+import { Library, BookOpen, Sparkles, CheckCircle, Plus, Compass, BarChart3, Settings, HelpCircle, type LucideIcon } from 'lucide-react'
 import { BookStatus } from '../App'
 import appIcon from '../../../../resources/icon-transparent.png'
 
 interface SidebarProps {
-  activeFilter: BookStatus | 'all' | 'discover'
-  onFilterChange: (filter: BookStatus | 'all' | 'discover') => void
+  activeFilter: BookStatus | 'all' | 'discover' | 'reports'
+  onFilterChange: (filter: BookStatus | 'all' | 'discover' | 'reports') => void
   counts: Record<BookStatus | 'all', number>
   onAddBook: () => void
   onOpenSettings: () => void
@@ -14,8 +14,8 @@ interface SidebarProps {
 
 const filters: { key: BookStatus | 'all'; label: string; icon: LucideIcon }[] = [
   { key: 'all', label: 'All Books', icon: Library },
-  { key: 'reading', label: 'Currently Reading', icon: BookOpen },
   { key: 'want-to-read', label: 'Want to Read', icon: Sparkles },
+  { key: 'reading', label: 'Currently Reading', icon: BookOpen },
   { key: 'finished', label: 'Read Books', icon: CheckCircle }
 ]
 
@@ -56,6 +56,13 @@ export function Sidebar({ activeFilter, onFilterChange, counts, onAddBook, onOpe
         >
           <Compass size={16} className="nav-icon" />
           <span className="nav-label">Discover</span>
+        </button>
+        <button
+          className={`nav-item ${activeFilter === 'reports' ? 'active' : ''}`}
+          onClick={() => onFilterChange('reports')}
+        >
+          <BarChart3 size={16} className="nav-icon" />
+          <span className="nav-label">Reports</span>
         </button>
       </nav>
 

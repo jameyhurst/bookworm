@@ -12,13 +12,10 @@ export interface SearchResult {
   olKey: string
 }
 
-export async function searchBooks(query: string): Promise<SearchResult[]> {
-  const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=6&fields=title,author_name,first_publish_year,number_of_pages_median,cover_i,key`
+const SEARCH_FIELDS = 'title,author_name,first_publish_year,number_of_pages_median,cover_i,key'
 
-  const response = await net.fetch(url)
-  const data = await response.json()
-
-  return (data.docs || []).map((doc: any) => ({
+function mapDocs(docs: any[]): SearchResult[] {
+  return docs.map((doc: any) => ({
     title: doc.title || 'Unknown Title',
     author: doc.author_name?.[0] || 'Unknown Author',
     firstPublishYear: doc.first_publish_year || null,
@@ -26,6 +23,49 @@ export async function searchBooks(query: string): Promise<SearchResult[]> {
     coverId: doc.cover_i || null,
     olKey: doc.key || ''
   }))
+}
+
+export async function searchBooks(query: string): Promise<SearchResult[]> {
+  const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=10&fields=${SEARCH_FIELDS}`
+
+  const response = await net.fetch(url, { signal: AbortSignal.timeout(6000) })
+  const data = await response.json()
+
+  let results = mapDocs(data.docs || [])
+
+  // Fallback: retry with title= parameter if broad search returned nothing
+  if (results.length === 0) {
+    const titleUrl = `https://openlibrary.org/search.json?title=${encodeURIComponent(query)}&limit=10&fields=${SEARCH_FIELDS}`
+    const titleResponse = await net.fetch(titleUrl, { signal: AbortSignal.timeout(6000) })
+    const titleData = await titleResponse.json()
+    results = mapDocs(titleData.docs || [])
+  }
+
+  return results.slice(0, 8)
+}
+
+function cleanSummary(raw: string): string {
+  let text = raw
+
+  // Remove everything from "Preceded by" / "Followed by" onward (cross-reference metadata)
+  text = text.replace(/\s*(Preceded|Followed) by:[\s\S]*$/i, '')
+
+  // Remove source references like ([Source][3])
+  text = text.replace(/\(\[?Source\]?(?:\[\d+\])?\)/gi, '')
+
+  // Remove markdown reference-style link definitions: [1]: https://...
+  text = text.replace(/^\s*\[\d+\]:.*$/gm, '')
+
+  // Convert markdown links [text][ref] and [text](url) to just text
+  text = text.replace(/\[([^\]]*)\](?:\[[^\]]*\]|\([^)]*\))/g, '$1')
+
+  // Strip markdown bold/italic markers
+  text = text.replace(/\*{1,3}/g, '')
+
+  // Collapse multiple newlines / whitespace
+  text = text.replace(/\n{3,}/g, '\n\n').trim()
+
+  return text
 }
 
 export async function fetchSummary(olKey: string): Promise<string | null> {
@@ -38,7 +78,8 @@ export async function fetchSummary(olKey: string): Promise<string | null> {
     const data = await response.json()
     const desc = data.description
     if (!desc) return null
-    return typeof desc === 'string' ? desc : desc.value || null
+    const raw = typeof desc === 'string' ? desc : desc.value || null
+    return raw ? cleanSummary(raw) : null
   } catch {
     return null
   }

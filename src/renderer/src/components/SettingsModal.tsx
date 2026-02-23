@@ -47,7 +47,7 @@ export function SettingsModal({ onClose, theme, onToggleTheme }: SettingsModalPr
             <label htmlFor="api-key">Claude API Key</label>
             <p className="form-hint">
               Required for book recommendations. Get your key from{' '}
-              <span className="text-link">console.anthropic.com</span>
+              <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noreferrer" className="text-link">console.anthropic.com</a>
             </p>
             <div className="api-key-input">
               <input

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Compass, RefreshCw, Loader2, Settings, BookOpenCheck } from 'lucide-react'
 
 interface Recommendation {
@@ -16,8 +16,9 @@ export function DiscoverView({ onOpenSettings }: DiscoverViewProps): JSX.Element
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasLoaded, setHasLoaded] = useState(false)
+  const [hasApiKey, setHasApiKey] = useState<boolean | null>(null)
 
-  const fetchRecommendations = async (): Promise<void> => {
+  const fetchRecommendations = useCallback(async (): Promise<void> => {
     setLoading(true)
     setError(null)
     try {
@@ -29,9 +30,19 @@ export function DiscoverView({ onOpenSettings }: DiscoverViewProps): JSX.Element
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  if (!hasLoaded && !loading && !error) {
+  useEffect(() => {
+    window.api.getSettings().then((settings) => {
+      const keyExists = !!settings.claudeApiKey
+      setHasApiKey(keyExists)
+      if (keyExists) fetchRecommendations()
+    })
+  }, [fetchRecommendations])
+
+  if (hasApiKey === null) return <div />
+
+  if (!hasApiKey && !hasLoaded && !loading && !error) {
     return (
       <div className="discover-empty">
         <Compass size={48} strokeWidth={1.2} />

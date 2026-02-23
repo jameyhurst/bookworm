@@ -10,6 +10,7 @@ A personal reading tracker built with Electron, React, and TypeScript. Track boo
 - **Mood tags** — Tag books with moods like "cozy", "dark", "thought-provoking"
 - **List & grid views** — Switch between a detailed list and a compact cover grid
 - **Discover** — AI-powered book recommendations via Claude API based on your library
+- **Export/Import** — Back up your entire library (books + covers) as a portable `.zip` file
 - **Keyboard-driven** — Full keyboard navigation with chord shortcuts
 - **Dark & light themes**
 
@@ -49,5 +50,6 @@ npm run package        # Build + package macOS app
 - [React 19](https://react.dev/) + TypeScript
 - [Lucide](https://lucide.dev/) icons
 - [Open Library API](https://openlibrary.org/developers/api) for book search and covers
+- [adm-zip](https://github.com/cthackers/adm-zip) for library export/import
 - JSON file storage
 - Claude API for recommendations (requires API key in Settings)

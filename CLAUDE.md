@@ -44,10 +44,13 @@ src/renderer/src/   — React UI (single-page)
 
 **Theming**: Dark/light via `data-theme` attribute on `<html>`. Toggle lives in SettingsModal. CSS custom properties defined in `:root` and `[data-theme="light"]`.
 
+**Library export/import**: In Settings, users can export their full library (books + covers) as a `.zip` via `adm-zip`, or import from one. Export bundles `data.json` + `covers/*.jpg`. Import is a full replace (not merge). Settings (API key) are excluded from exports for security. On import, the renderer reloads books and resets cached recommendations.
+
 ## Environment Constraints
 
 - Corporate SSL proxy blocks `node-gyp` and Node `fetch` — use Electron's `net.fetch` (Chromium stack) for HTTP in the main process
 - SQLite/native modules won't build due to the proxy; that's why we use JSON file storage
+- `adm-zip` (pure JS) is used for library export/import — no native dependencies
 - Node v24, npm v11, macOS ARM64
 
 ## Style Conventions

@@ -1,4 +1,4 @@
-export type SortMode = 'default' | 'title' | 'author'
+export type SortMode = 'default' | 'title' | 'author' | 'date'
 
 interface SortToggleProps {
   mode: SortMode
@@ -21,6 +21,13 @@ export function SortToggle({ mode, onChange }: SortToggleProps): JSX.Element {
         title="Sort by author (s a)"
       >
         Author
+      </button>
+      <button
+        className={`sort-toggle-btn${mode === 'date' ? ' active' : ''}`}
+        onClick={() => onChange(mode === 'date' ? 'default' : 'date')}
+        title="Sort by date (s d)"
+      >
+        Date
       </button>
     </div>
   )

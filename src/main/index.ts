@@ -1,7 +1,9 @@
-import { app, shell, BrowserWindow, ipcMain, net, protocol, nativeImage, nativeTheme } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog, net, protocol, nativeImage, nativeTheme } from 'electron'
 import { join } from 'path'
-import { readFile } from 'fs/promises'
+import { readFile, readdir, mkdir, rm, writeFile } from 'fs/promises'
+import { existsSync } from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import AdmZip from 'adm-zip'
 import { Database } from './database'
 import { searchBooks, downloadCover, fetchSummary } from './openlibrary'
 import { getRecommendations } from './claude'
@@ -108,5 +110,68 @@ function registerIpcHandlers(): void {
     }
     const books = db.getAllBooks()
     return getRecommendations(books, settings.claudeApiKey, userPrompt)
+  })
+
+  ipcMain.handle('library:export', async () => {
+    const win = BrowserWindow.getFocusedWindow()
+    const result = await dialog.showSaveDialog(win!, {
+      defaultPath: 'bookworm-library.zip',
+      filters: [{ name: 'ZIP Archive', extensions: ['zip'] }]
+    })
+    if (result.canceled || !result.filePath) return { success: false }
+
+    try {
+      const zip = new AdmZip()
+      const exportData = db.getExportData()
+      zip.addFile('data.json', Buffer.from(JSON.stringify(exportData, null, 2)))
+
+      const coversDir = join(app.getPath('userData'), 'covers')
+      if (existsSync(coversDir)) {
+        const files = await readdir(coversDir)
+        for (const file of files) {
+          const data = await readFile(join(coversDir, file))
+          zip.addFile(`covers/${file}`, data)
+        }
+      }
+
+      zip.writeZip(result.filePath)
+      return { success: true, bookCount: exportData.books.length }
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Export failed' }
+    }
+  })
+
+  ipcMain.handle('library:import', async () => {
+    const win = BrowserWindow.getFocusedWindow()
+    const result = await dialog.showOpenDialog(win!, {
+      filters: [{ name: 'ZIP Archive', extensions: ['zip'] }],
+      properties: ['openFile']
+    })
+    if (result.canceled || result.filePaths.length === 0) return { success: false }
+
+    try {
+      const zip = new AdmZip(result.filePaths[0])
+      const dataEntry = zip.getEntry('data.json')
+      if (!dataEntry) throw new Error('Invalid backup: missing data.json')
+
+      const data = JSON.parse(dataEntry.getData().toString('utf-8'))
+      db.importData(data)
+
+      // Replace covers directory
+      const coversDir = join(app.getPath('userData'), 'covers')
+      if (existsSync(coversDir)) await rm(coversDir, { recursive: true })
+      await mkdir(coversDir, { recursive: true })
+
+      for (const entry of zip.getEntries()) {
+        if (entry.entryName.startsWith('covers/') && !entry.isDirectory) {
+          const filename = entry.entryName.replace('covers/', '')
+          await writeFile(join(coversDir, filename), entry.getData())
+        }
+      }
+
+      return { success: true, bookCount: data.books.length }
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Import failed' }
+    }
   })
 }

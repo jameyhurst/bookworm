@@ -12,6 +12,8 @@ export interface BookAPI {
   updateSettings: (updates: any) => Promise<any>
   getRecommendations: (userPrompt?: string) => Promise<any>
   syncTheme: (theme: string) => Promise<void>
+  exportLibrary: () => Promise<{ success: boolean; bookCount?: number; error?: string }>
+  importLibrary: () => Promise<{ success: boolean; bookCount?: number; error?: string }>
 }
 
 const api: BookAPI = {
@@ -25,7 +27,9 @@ const api: BookAPI = {
   getSettings: () => ipcRenderer.invoke('settings:get'),
   updateSettings: (updates) => ipcRenderer.invoke('settings:update', updates),
   getRecommendations: (userPrompt?) => ipcRenderer.invoke('discover:getRecommendations', userPrompt),
-  syncTheme: (theme) => ipcRenderer.invoke('theme:sync', theme)
+  syncTheme: (theme) => ipcRenderer.invoke('theme:sync', theme),
+  exportLibrary: () => ipcRenderer.invoke('library:export'),
+  importLibrary: () => ipcRenderer.invoke('library:import')
 }
 
 contextBridge.exposeInMainWorld('api', api)

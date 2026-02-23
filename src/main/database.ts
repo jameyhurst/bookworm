@@ -136,4 +136,17 @@ export class Database {
     this.save()
     return this.store.settings
   }
+
+  getExportData(): { books: Book[]; nextId: number } {
+    return { books: this.store.books, nextId: this.store.nextId }
+  }
+
+  importData(data: { books: Book[]; nextId: number }): void {
+    if (!Array.isArray(data.books) || typeof data.nextId !== 'number') {
+      throw new Error('Invalid library data')
+    }
+    this.store.books = data.books
+    this.store.nextId = data.nextId
+    this.save()
+  }
 }

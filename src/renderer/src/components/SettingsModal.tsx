@@ -1,16 +1,20 @@
 import { useState, useEffect } from 'react'
-import { X, Eye, EyeOff, Sun, Moon } from 'lucide-react'
+import { X, Eye, EyeOff, Sun, Moon, Download, Upload } from 'lucide-react'
 
 interface SettingsModalProps {
   onClose: () => void
   theme: 'dark' | 'light'
   onToggleTheme: () => void
+  onLibraryImported: () => void
+  addToast: (message: string, type: 'added' | 'deleted') => void
 }
 
-export function SettingsModal({ onClose, theme, onToggleTheme }: SettingsModalProps): JSX.Element {
+export function SettingsModal({ onClose, theme, onToggleTheme, onLibraryImported, addToast }: SettingsModalProps): JSX.Element {
   const [apiKey, setApiKey] = useState('')
   const [showKey, setShowKey] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const [importing, setImporting] = useState(false)
 
   useEffect(() => {
     window.api.getSettings().then((settings) => {
@@ -22,6 +26,35 @@ export function SettingsModal({ onClose, theme, onToggleTheme }: SettingsModalPr
     await window.api.updateSettings({ claudeApiKey: apiKey.trim() || null })
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
+  }
+
+  const handleExport = async (): Promise<void> => {
+    setExporting(true)
+    try {
+      const result = await window.api.exportLibrary()
+      if (result.error) {
+        addToast(`Export failed: ${result.error}`, 'deleted')
+      } else if (result.success) {
+        addToast(`Exported ${result.bookCount} book${result.bookCount === 1 ? '' : 's'}`, 'added')
+      }
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const handleImport = async (): Promise<void> => {
+    setImporting(true)
+    try {
+      const result = await window.api.importLibrary()
+      if (result.error) {
+        addToast(`Import failed: ${result.error}`, 'deleted')
+      } else if (result.success) {
+        addToast(`Imported ${result.bookCount} book${result.bookCount === 1 ? '' : 's'}`, 'added')
+        onLibraryImported()
+      }
+    } finally {
+      setImporting(false)
+    }
   }
 
   return (
@@ -41,6 +74,23 @@ export function SettingsModal({ onClose, theme, onToggleTheme }: SettingsModalPr
               {theme === 'dark' ? <Moon size={16} /> : <Sun size={16} />}
               {theme === 'dark' ? 'Dark' : 'Light'}
             </button>
+          </div>
+
+          <div className="form-group">
+            <label>Library</label>
+            <p className="form-hint">
+              Export saves your books and covers as a .zip file. Import replaces your current library.
+            </p>
+            <div className="library-actions">
+              <button className="btn-secondary" onClick={handleExport} disabled={exporting || importing}>
+                <Download size={15} />
+                {exporting ? 'Exporting...' : 'Export'}
+              </button>
+              <button className="btn-secondary" onClick={handleImport} disabled={exporting || importing}>
+                <Upload size={15} />
+                {importing ? 'Importing...' : 'Import'}
+              </button>
+            </div>
           </div>
 
           <div className="form-group">

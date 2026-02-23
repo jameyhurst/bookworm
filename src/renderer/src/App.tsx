@@ -393,7 +393,13 @@ function App(): JSX.Element {
         />
       )}
       {showSettings && (
-        <SettingsModal onClose={() => setShowSettings(false)} theme={theme} onToggleTheme={toggleTheme} />
+        <SettingsModal
+          onClose={() => setShowSettings(false)}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          onLibraryImported={() => { loadBooks(); setCachedRecs(null); prefetchedRef.current = false }}
+          addToast={addToast}
+        />
       )}
       {showHelp && (
         <HelpModal onClose={() => setShowHelp(false)} />

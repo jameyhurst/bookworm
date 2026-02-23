@@ -94,6 +94,7 @@ export function BookCard({ book, isSelected, viewMode, index, onOpen, onDelete }
       <div className="book-info">
         <h3 className="book-title">{book.title}</h3>
         <p className="book-author">{book.author}</p>
+        {book.summary && <p className="book-summary-truncated">{book.summary}</p>}
       </div>
 
       <div className="book-card-meta">

@@ -3,7 +3,7 @@ import { join } from 'path'
 import { readFile } from 'fs/promises'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { Database } from './database'
-import { searchBooks, downloadCover } from './openlibrary'
+import { searchBooks, downloadCover, fetchSummary } from './openlibrary'
 import { getRecommendations } from './claude'
 
 let db: Database
@@ -92,6 +92,8 @@ function registerIpcHandlers(): void {
     const path = await downloadCover(coverId)
     return path ? coverId : null
   })
+
+  ipcMain.handle('books:fetchSummary', (_event, olKey: string) => fetchSummary(olKey))
 
   ipcMain.handle('theme:sync', (_event, theme: string) => {
     nativeTheme.themeSource = theme as 'dark' | 'light'

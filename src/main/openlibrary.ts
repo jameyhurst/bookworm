@@ -28,6 +28,22 @@ export async function searchBooks(query: string): Promise<SearchResult[]> {
   }))
 }
 
+export async function fetchSummary(olKey: string): Promise<string | null> {
+  if (!olKey) return null
+  try {
+    const response = await net.fetch(`https://openlibrary.org${olKey}.json`, {
+      signal: AbortSignal.timeout(8000)
+    })
+    if (!response.ok) return null
+    const data = await response.json()
+    const desc = data.description
+    if (!desc) return null
+    return typeof desc === 'string' ? desc : desc.value || null
+  } catch {
+    return null
+  }
+}
+
 export async function downloadCover(coverId: number): Promise<string | null> {
   const coversDir = join(app.getPath('userData'), 'covers')
   const filePath = join(coversDir, `${coverId}.jpg`)

@@ -51,6 +51,8 @@ export function useKeyboardShortcuts(callbacks: ShortcutCallbacks): {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
       const key = e.key
+      const target = e.target as HTMLElement
+      console.log(`[keys] key="${key}" target=<${target.tagName.toLowerCase()}${target.id ? '#' + target.id : ''}${target.className ? '.' + target.className.split(' ')[0] : ''}> pending=${pendingKeyRef.current}`)
 
       // Escape always works, even in input fields
       if (key === 'Escape') {
@@ -71,7 +73,10 @@ export function useKeyboardShortcuts(callbacks: ShortcutCallbacks): {
 
       // Skip other shortcuts when focus is in an input element
       const tag = (e.target as HTMLElement).tagName
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+        console.log(`[keys] BLOCKED: focus is on ${tag}`)
+        return
+      }
 
       // Cmd+Backspace / Cmd+Delete — quick delete
       if ((key === 'Backspace' || key === 'Delete') && e.metaKey) {
@@ -92,7 +97,8 @@ export function useKeyboardShortcuts(callbacks: ShortcutCallbacks): {
             w: 'want-to-read',
             c: 'reading',
             r: 'finished',
-            d: 'discover'
+            d: 'discover',
+            p: 'reports'
           }
           if (chordMap[key]) cbRef.current.onGoToFilter(chordMap[key])
         } else if (pending === 'r') {

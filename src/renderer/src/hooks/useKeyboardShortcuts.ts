@@ -12,6 +12,7 @@ export interface ShortcutCallbacks {
   onEditReview: () => void
   onToggleView: () => void
   onShowHelp: () => void
+  onDeleteSelected: () => void
   onSortBy: (sort: string) => void
 }
 
@@ -72,6 +73,13 @@ export function useKeyboardShortcuts(callbacks: ShortcutCallbacks): {
       const tag = (e.target as HTMLElement).tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
 
+      // Cmd+Backspace / Cmd+Delete — quick delete
+      if ((key === 'Backspace' || key === 'Delete') && e.metaKey) {
+        e.preventDefault()
+        cbRef.current.onDeleteSelected()
+        return
+      }
+
       // Handle second key of a chord
       const pending = pendingKeyRef.current
       if (pending) {
@@ -103,7 +111,8 @@ export function useKeyboardShortcuts(callbacks: ShortcutCallbacks): {
         } else if (pending === 's') {
           const sortMap: Record<string, string> = {
             a: 'author',
-            t: 'title'
+            t: 'title',
+            d: 'date'
           }
           if (sortMap[key]) cbRef.current.onSortBy(sortMap[key])
         }

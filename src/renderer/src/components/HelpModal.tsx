@@ -61,13 +61,16 @@ export function HelpModal({ onClose }: HelpModalProps): JSX.Element {
           <div className="help-section">
             <h3 className="help-section-title">Actions</h3>
             <ShortcutRow label="Add book" keys={['a']} />
+            <ShortcutRow label="Save book" keys={['⌘', 'Enter']} />
             <ShortcutRow label="Edit review" keys={['e']} />
+            <ShortcutRow label="Delete selected" keys={['⌘', '⌫']} />
           </div>
 
           <div className="help-section">
             <h3 className="help-section-title">Sort</h3>
             <ShortcutRow label="By title" keys={['s', 't']} />
             <ShortcutRow label="By author" keys={['s', 'a']} />
+            <ShortcutRow label="By date" keys={['s', 'd']} />
           </div>
 
           <div className="help-section">

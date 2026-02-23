@@ -40,6 +40,8 @@ src/renderer/src/   — React UI (single-page)
 
 **View modes**: List and grid views toggled via ViewToggle component or `v` key. Preference stored in `localStorage('bookworm-view')`.
 
+**Date Read**: User-facing `dateRead` field stored as `"YYYY-MM"` string or `null`. Defaults to current month in AddBookModal, skippable via checkbox. Editable in BookDetail. Separate from `dateAdded` (internal system timestamp). Books without a date are treated as older/retroactive additions by the AI.
+
 **Theming**: Dark/light via `data-theme` attribute on `<html>`. Toggle lives in SettingsModal. CSS custom properties defined in `:root` and `[data-theme="light"]`.
 
 ## Environment Constraints

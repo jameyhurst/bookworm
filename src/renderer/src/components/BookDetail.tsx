@@ -43,6 +43,23 @@ export function BookDetail({
     }
   }, [initialFocus])
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
+      if (e.key === 'Enter' && e.metaKey) {
+        e.preventDefault()
+        // Save any pending review, then close
+        const trimmed = review.trim()
+        const newReview = trimmed || null
+        if (newReview !== book.review) {
+          onUpdateBook(book.id, { review: newReview })
+        }
+        onClose()
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  })
+
   const handleDelete = (): void => {
     onDelete(book.id)
     onClose()
@@ -97,6 +114,13 @@ export function BookDetail({
             </div>
           </div>
 
+          {book.summary && (
+            <div className="book-detail-section">
+              <label className="section-label">Summary</label>
+              <p className="book-summary">{book.summary}</p>
+            </div>
+          )}
+
           <div className="book-detail-section">
             <label className="section-label">Rating</label>
             <StarRating
@@ -129,11 +153,35 @@ export function BookDetail({
             />
           </div>
 
+          <div className="book-detail-section">
+            <label className="section-label">Date Read</label>
+            <div className="date-read-row">
+              {book.dateRead !== null && (
+                <input
+                  type="month"
+                  className="month-input"
+                  value={book.dateRead}
+                  onChange={(e) => onUpdateBook(book.id, { dateRead: e.target.value || null })}
+                />
+              )}
+              <label className="skip-date-toggle">
+                <input
+                  type="checkbox"
+                  checked={book.dateRead === null}
+                  onChange={(e) =>
+                    onUpdateBook(book.id, {
+                      dateRead: e.target.checked ? null : new Date().toISOString().slice(0, 7)
+                    })
+                  }
+                />
+                No date
+              </label>
+            </div>
+          </div>
+
           {book.dateAdded && (
             <p className="book-detail-meta">
               Added {new Date(book.dateAdded).toLocaleDateString()}
-              {book.dateFinished &&
-                ` · Read ${new Date(book.dateFinished).toLocaleDateString()}`}
             </p>
           )}
 

@@ -20,6 +20,11 @@ export async function getRecommendations(
   const bookSummaries = finishedBooks
     .map((b) => {
       const parts = [`"${b.title}" by ${b.author}`]
+      if (b.dateRead) {
+        const [y, m] = b.dateRead.split('-')
+        const monthName = new Date(Number(y), Number(m) - 1).toLocaleString('en', { month: 'short' })
+        parts.push(`Read: ${monthName} ${y}`)
+      }
       if (b.rating) parts.push(`Rating: ${b.rating}/5`)
       if (b.tags.length > 0) parts.push(`Mood: ${b.tags.join(', ')}`)
       if (b.review) parts.push(`Review: ${b.review}`)
@@ -27,7 +32,7 @@ export async function getRecommendations(
     })
     .join('\n')
 
-  const prompt = `Based on the following books I've read and enjoyed, recommend exactly 5 books I might like. Consider my ratings, moods, and reviews to understand my taste.
+  const prompt = `Based on the following books I've read and enjoyed, recommend exactly 5 books I might like. Consider my ratings, moods, reviews, and reading timeline to understand my taste. Books without a date are older reads added retroactively.
 
 My finished books:
 ${bookSummaries}

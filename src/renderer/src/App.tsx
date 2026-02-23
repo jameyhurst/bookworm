@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Sidebar } from './components/Sidebar'
 import { BookList } from './components/BookList'
 import { BookDetail } from './components/BookDetail'
@@ -8,6 +8,7 @@ import { SettingsModal } from './components/SettingsModal'
 import { HelpModal } from './components/HelpModal'
 import { ViewToggle, type ViewMode } from './components/ViewToggle'
 import { SortToggle } from './components/SortToggle'
+import { Toast, type ToastItem } from './components/Toast'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { PanelLeftOpen } from 'lucide-react'
 
@@ -15,6 +16,7 @@ export type BookStatus = 'want-to-read' | 'reading' | 'finished'
 
 export interface Book {
   id: number
+  bookId: string
   title: string
   author: string
   status: BookStatus
@@ -22,8 +24,10 @@ export interface Book {
   review: string | null
   tags: string[]
   coverId: number | null
+  summary: string | null
   dateAdded: string
   dateFinished: string | null
+  dateRead: string | null
 }
 
 function App(): JSX.Element {
@@ -36,13 +40,15 @@ function App(): JSX.Element {
   const [showDetail, setShowDetail] = useState(false)
   const [detailFocus, setDetailFocus] = useState<'default' | 'review'>('default')
   const [sidebarVisible, setSidebarVisible] = useState(true)
-  const [sortBy, setSortBy] = useState<'default' | 'title' | 'author'>('default')
+  const [sortBy, setSortBy] = useState<'default' | 'title' | 'author' | 'date'>('default')
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     return (localStorage.getItem('bookworm-theme') as 'dark' | 'light') || 'dark'
   })
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     return (localStorage.getItem('bookworm-view') as ViewMode) || 'list'
   })
+  const [toasts, setToasts] = useState<ToastItem[]>([])
+  const nextToastId = useRef(0)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -55,6 +61,15 @@ function App(): JSX.Element {
   }, [viewMode])
 
   const toggleTheme = (): void => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))
+
+  const addToast = useCallback((message: string, type: ToastItem['type']) => {
+    const id = nextToastId.current++
+    setToasts((prev) => [...prev, { id, message, type }])
+  }, [])
+
+  const dismissToast = useCallback((id: number) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id))
+  }, [])
 
   const loadBooks = useCallback(async () => {
     const allBooks = await window.api.getAll()
@@ -75,7 +90,13 @@ function App(): JSX.Element {
       ? [...filtered].sort((a, b) => a.title.localeCompare(b.title))
       : sortBy === 'author'
         ? [...filtered].sort((a, b) => a.author.localeCompare(b.author))
-        : filtered
+        : sortBy === 'date'
+          ? [...filtered].sort((a, b) => {
+              const da = a.dateFinished || a.dateAdded
+              const db = b.dateFinished || b.dateAdded
+              return new Date(db).getTime() - new Date(da).getTime()
+            })
+          : filtered
 
   // Reset selection when filter changes
   useEffect(() => {
@@ -90,10 +111,12 @@ function App(): JSX.Element {
     finished: books.filter((b) => b.status === 'finished').length
   }
 
-  const handleAddBook = async (book: Omit<Book, 'id' | 'dateAdded' | 'dateFinished'>): Promise<void> => {
-    await window.api.add(book)
+  const handleAddBook = async (book: Omit<Book, 'id' | 'bookId' | 'dateAdded' | 'dateFinished'>): Promise<string | null> => {
+    const result = await window.api.add(book)
+    if (result && 'error' in result) return result.error
     await loadBooks()
-    setShowAddModal(false)
+    addToast(`\u201c${book.title}\u201d added`, 'added')
+    return null
   }
 
   const handleUpdateBook = async (id: number, updates: Partial<Book>): Promise<void> => {
@@ -102,9 +125,11 @@ function App(): JSX.Element {
   }
 
   const handleDeleteBook = async (id: number): Promise<void> => {
+    const title = books.find((b) => b.id === id)?.title
     await window.api.delete(id)
     await loadBooks()
     setSelectedBookIndex(null)
+    if (title) addToast(`\u201c${title}\u201d removed`, 'deleted')
   }
 
   const anyModal = showAddModal || showDetail || showSettings || showHelp
@@ -162,6 +187,12 @@ function App(): JSX.Element {
         handleUpdateBook(filteredBooks[selectedBookIndex].id, { status: status as BookStatus })
       }
     },
+    onDeleteSelected: () => {
+      if (showAddModal || showSettings || showHelp) return
+      if (selectedBookIndex !== null && filteredBooks[selectedBookIndex]) {
+        handleDeleteBook(filteredBooks[selectedBookIndex].id)
+      }
+    },
     onEditReview: () => {
       if (showAddModal || showSettings || showHelp) return
       if (selectedBookIndex !== null && filteredBooks[selectedBookIndex]) {
@@ -176,7 +207,7 @@ function App(): JSX.Element {
       if (!anyModal) setShowHelp(true)
     },
     onSortBy: (sort) => {
-      if (!anyModal) setSortBy((prev) => prev === sort ? 'default' : sort as 'title' | 'author')
+      if (!anyModal) setSortBy((prev) => prev === sort ? 'default' : sort as 'title' | 'author' | 'date')
     },
     onEscape: () => {
       if (showHelp) {
@@ -272,6 +303,7 @@ function App(): JSX.Element {
       {showHelp && (
         <HelpModal onClose={() => setShowHelp(false)} />
       )}
+      <Toast toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
 }

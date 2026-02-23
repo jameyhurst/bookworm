@@ -1,11 +1,17 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { X, Search, Loader2, PenLine, HelpCircle } from 'lucide-react'
+import { X, Search, Loader2, PenLine } from 'lucide-react'
 import { Book, BookStatus } from '../App'
 
+export interface AddBookMeta {
+  openLibraryCoverId?: number
+  olKey?: string
+}
+
 interface AddBookModalProps {
-  onAdd: (book: Omit<Book, 'id' | 'bookId' | 'dateAdded' | 'dateFinished'>) => Promise<string | null>
+  onAdd: (book: Omit<Book, 'id' | 'bookId' | 'dateAdded' | 'dateFinished'>, meta?: AddBookMeta) => Promise<string | null>
   onClose: () => void
   defaultStatus?: BookStatus
+  existingBooks?: Book[]
 }
 
 interface SearchResult {
@@ -19,26 +25,25 @@ interface SearchResult {
 
 type ModalView = 'search' | 'form'
 
-export function AddBookModal({ onAdd, onClose, defaultStatus }: AddBookModalProps): JSX.Element {
+export function AddBookModal({ onAdd, onClose, defaultStatus, existingBooks = [] }: AddBookModalProps): JSX.Element {
   const [view, setView] = useState<ModalView>('search')
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const [searching, setSearching] = useState(false)
+  const [adding, setAdding] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout>>()
 
-  // Form state
+  // Form state (manual entry only)
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('')
-  const [status, setStatus] = useState<BookStatus>(defaultStatus ?? 'want-to-read')
-  const [coverId, setCoverId] = useState<number | null>(null)
-  const [downloadingCover, setDownloadingCover] = useState(false)
-  const [summary, setSummary] = useState<string | null>(null)
-  const [loadingMeta, setLoadingMeta] = useState(false)
-  const [dateRead, setDateRead] = useState(() => new Date().toISOString().slice(0, 7))
-  const [skipDate, setSkipDate] = useState(false)
   const [addError, setAddError] = useState<string | null>(null)
   const [selectedResult, setSelectedResult] = useState(-1)
   const resultsRef = useRef<HTMLDivElement>(null)
+
+  const isDupe = (title: string, author: string): boolean => {
+    const bookId = `${title.trim().toLowerCase()}::${author.trim().toLowerCase()}`
+    return existingBooks.some((b) => b.bookId === bookId)
+  }
 
   const doSearch = useCallback(async (q: string) => {
     if (q.trim().length < 2) {
@@ -64,75 +69,65 @@ export function AddBookModal({ onAdd, onClose, defaultStatus }: AddBookModalProp
   }, [query, doSearch])
 
   const handleSelectResult = async (result: SearchResult): Promise<void> => {
-    setTitle(result.title)
-    setAuthor(result.author)
-    setSummary(null)
-    setView('form')
-    setLoadingMeta(true)
+    if (adding) return
+    setAdding(true)
+    setAddError(null)
 
-    // Fetch cover and summary in parallel
-    const coverPromise = result.coverId
-      ? window.api.downloadCover(result.coverId)
-      : Promise.resolve(null)
-    const summaryPromise = result.olKey
-      ? window.api.fetchSummary(result.olKey)
-      : Promise.resolve(null)
+    const error = await onAdd({
+      title: result.title,
+      author: result.author,
+      status: defaultStatus ?? 'want-to-read',
+      rating: null,
+      review: null,
+      tags: [],
+      coverId: null,
+      summary: null,
+      dateRead: new Date().toISOString().slice(0, 7)
+    }, {
+      openLibraryCoverId: result.coverId ?? undefined,
+      olKey: result.olKey
+    })
 
-    if (result.coverId) setDownloadingCover(true)
-    try {
-      const [savedId, fetchedSummary] = await Promise.all([coverPromise, summaryPromise])
-      setCoverId(savedId)
-      setSummary(fetchedSummary)
-    } catch {
-      // Network errors shouldn't block adding the book
-    } finally {
-      setDownloadingCover(false)
-      setLoadingMeta(false)
+    if (error) {
+      setAddError(error)
+      setAdding(false)
     }
+    // If no error, modal unmounts via the chain in App.tsx
   }
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault()
-    if (!title.trim() || !author.trim() || loadingMeta) return
+    if (!title.trim() || !author.trim() || adding) return
     setAddError(null)
+    setAdding(true)
 
     const error = await onAdd({
       title: title.trim(),
       author: author.trim(),
-      status,
+      status: defaultStatus ?? 'want-to-read',
       rating: null,
       review: null,
       tags: [],
-      coverId,
-      summary,
-      dateRead: skipDate ? null : dateRead
+      coverId: null,
+      summary: null,
+      dateRead: new Date().toISOString().slice(0, 7)
     })
+
     if (error) {
       setAddError(error)
-    } else {
-      // Reset for next add
-      setTitle('')
-      setAuthor('')
-      setCoverId(null)
-      setSummary(null)
-      setDateRead(new Date().toISOString().slice(0, 7))
-      setSkipDate(false)
-      setQuery('')
-      setResults([])
-      setSelectedResult(-1)
-      setAddError(null)
-      setView('search')
+      setAdding(false)
     }
   }
 
   const handleManualEntry = (): void => {
     setTitle(query.trim())
+    setAddError(null)
     setView('form')
   }
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
-      if (e.key === 'Enter' && e.metaKey && view === 'form' && title.trim() && author.trim()) {
+      if (e.key === 'Enter' && e.metaKey && view === 'form' && title.trim() && author.trim() && !adding) {
         e.preventDefault()
         handleSubmit(e as unknown as React.FormEvent)
       }
@@ -160,6 +155,7 @@ export function AddBookModal({ onAdd, onClose, defaultStatus }: AddBookModalProp
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => {
+                  if (adding) return
                   if (e.key === 'ArrowDown') {
                     e.preventDefault()
                     setSelectedResult((prev) => Math.min(prev + 1, results.length - 1))
@@ -173,9 +169,12 @@ export function AddBookModal({ onAdd, onClose, defaultStatus }: AddBookModalProp
                 }}
                 placeholder="Search by title or author..."
                 autoFocus
+                disabled={adding}
               />
-              {searching && <Loader2 size={16} className="search-spinner" />}
+              {(searching || adding) && <Loader2 size={16} className="search-spinner" />}
             </div>
+
+            {addError && <p className="add-error">{addError}</p>}
 
             <div className="search-results" ref={resultsRef}>
               {results.map((result, i) => (
@@ -183,6 +182,7 @@ export function AddBookModal({ onAdd, onClose, defaultStatus }: AddBookModalProp
                   key={`${result.olKey}-${i}`}
                   className={`search-result${selectedResult === i ? ' search-result-selected' : ''}`}
                   onClick={() => handleSelectResult(result)}
+                  disabled={adding}
                   ref={(el) => {
                     if (selectedResult === i && el) el.scrollIntoView({ block: 'nearest' })
                   }}
@@ -203,6 +203,9 @@ export function AddBookModal({ onAdd, onClose, defaultStatus }: AddBookModalProp
                       {result.firstPublishYear && ` · ${result.firstPublishYear}`}
                       {result.pageCount && ` · ${result.pageCount} pages`}
                     </span>
+                    {isDupe(result.title, result.author) && (
+                      <span className="search-result-dupe">Already in library</span>
+                    )}
                   </div>
                 </button>
               ))}
@@ -212,25 +215,13 @@ export function AddBookModal({ onAdd, onClose, defaultStatus }: AddBookModalProp
               )}
             </div>
 
-            <button className="manual-entry-btn" onClick={handleManualEntry}>
+            <button className="manual-entry-btn" onClick={handleManualEntry} disabled={adding}>
               <PenLine size={14} />
               Add manually instead
             </button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="modal-form">
-            {(coverId || downloadingCover) && (
-              <div className="form-cover-preview">
-                {downloadingCover ? (
-                  <div className="cover-loading">
-                    <Loader2 size={20} className="search-spinner" />
-                  </div>
-                ) : (
-                  <img src={`covers://local/${coverId}.jpg`} alt="" className="cover-preview-img" />
-                )}
-              </div>
-            )}
-
             <div className="form-group">
               <label htmlFor="title">Title</label>
               <input
@@ -254,62 +245,17 @@ export function AddBookModal({ onAdd, onClose, defaultStatus }: AddBookModalProp
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="status">Status</label>
-              <select
-                id="status"
-                value={status}
-                onChange={(e) => setStatus(e.target.value as BookStatus)}
-              >
-                <option value="want-to-read">Want to Read</option>
-                <option value="reading">Currently Reading</option>
-                <option value="finished">Read</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label>Date Read</label>
-              <div className="date-read-row">
-                {!skipDate && (
-                  <input
-                    type="month"
-                    className="month-input"
-                    value={dateRead}
-                    onChange={(e) => setDateRead(e.target.value)}
-                  />
-                )}
-                <label className="skip-date-toggle">
-                  <input
-                    type="checkbox"
-                    checked={skipDate}
-                    onChange={(e) => setSkipDate(e.target.checked)}
-                  />
-                  Skip date
-                  <span className="date-help-icon">
-                    <HelpCircle size={13} />
-                    <span className="date-help-tooltip">
-                      Skip the date when building your library retroactively. Books without a date are treated as older reads.
-                    </span>
-                  </span>
-                </label>
-              </div>
-            </div>
-
             {addError && <p className="add-error">{addError}</p>}
 
             <div className="modal-actions">
               <button type="button" className="btn-secondary" onClick={() => {
-                if (title || author) {
-                  setView('search')
-                  setAddError(null)
-                } else {
-                  onClose()
-                }
+                setView('search')
+                setAddError(null)
               }}>
-                {title || author ? 'Back' : 'Cancel'}
+                Back
               </button>
-              <button type="submit" className="btn-primary" disabled={!title.trim() || !author.trim() || loadingMeta}>
-                {loadingMeta ? 'Loading...' : 'Add Book'}
+              <button type="submit" className="btn-primary" disabled={!title.trim() || !author.trim() || adding}>
+                {adding ? 'Adding...' : 'Add Book'}
               </button>
             </div>
           </form>

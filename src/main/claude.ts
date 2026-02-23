@@ -9,7 +9,8 @@ interface Recommendation {
 
 export async function getRecommendations(
   books: Book[],
-  apiKey: string
+  apiKey: string,
+  userPrompt?: string
 ): Promise<Recommendation[]> {
   const finishedBooks = books.filter((b) => b.status === 'finished')
 
@@ -37,7 +38,7 @@ export async function getRecommendations(
 My finished books:
 ${bookSummaries}
 
-Respond with ONLY a JSON array of 5 objects, each with "title", "author", and "reason" fields. The reason should be 1-2 sentences explaining why I'd enjoy it, referencing specific books or patterns from my reading history. Do not recommend books I've already read. Do not include any text outside the JSON array.`
+Respond with ONLY a JSON array of 5 objects, each with "title", "author", and "reason" fields. The reason should be 1-2 sentences explaining why I'd enjoy it, referencing specific books or patterns from my reading history. Do not recommend books I've already read. Do not include any text outside the JSON array.${userPrompt ? `\nAdditional preference: ${userPrompt}` : ''}`
 
   const response = await net.fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',

@@ -101,12 +101,12 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle('settings:get', () => db.getSettings())
   ipcMain.handle('settings:update', (_event, updates) => db.updateSettings(updates))
-  ipcMain.handle('discover:getRecommendations', async () => {
+  ipcMain.handle('discover:getRecommendations', async (_event, userPrompt?: string) => {
     const settings = db.getSettings()
     if (!settings.claudeApiKey) {
       throw new Error('Please add your Claude API key in Settings first.')
     }
     const books = db.getAllBooks()
-    return getRecommendations(books, settings.claudeApiKey)
+    return getRecommendations(books, settings.claudeApiKey, userPrompt)
   })
 }

@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Compass, RefreshCw, Loader2, Settings, BookOpenCheck } from 'lucide-react'
+import { Compass, RefreshCw, Loader2, Settings, BookOpenCheck, Plus, CheckCircle, Sparkles } from 'lucide-react'
+import { Book } from '../App'
+import type { AddBookMeta } from './AddBookModal'
 
 interface Recommendation {
   title: string
@@ -9,47 +11,122 @@ interface Recommendation {
 
 interface DiscoverViewProps {
   onOpenSettings: () => void
+  onAddBook: (book: Omit<Book, 'id' | 'bookId' | 'dateAdded' | 'dateFinished'>, meta?: AddBookMeta) => Promise<string | null>
+  existingBooks: Book[]
+  cachedRecs?: Recommendation[] | null
+  onRecsLoaded?: (recs: Recommendation[]) => void
 }
 
-export function DiscoverView({ onOpenSettings }: DiscoverViewProps): JSX.Element {
-  const [recommendations, setRecommendations] = useState<Recommendation[]>([])
+const MOOD_CHIPS = [
+  { label: 'Cozy', prompt: 'cozy, comforting, warm reads' },
+  { label: 'Mind-Bending', prompt: 'mind-bending, thought-provoking, intellectually challenging' },
+  { label: 'Page-Turners', prompt: 'fast-paced page-turners that are hard to put down' },
+  { label: 'Literary Fiction', prompt: 'literary fiction with beautiful prose' },
+  { label: 'Nonfiction', prompt: 'nonfiction — science, history, biography, essays' },
+  { label: 'Fantasy & Sci-Fi', prompt: 'fantasy and science fiction' },
+  { label: 'Dark & Gritty', prompt: 'dark, gritty, noir, or morally complex' },
+  { label: 'Short Reads', prompt: 'short books under 250 pages' }
+]
+
+export function DiscoverView({ onOpenSettings, onAddBook, existingBooks, cachedRecs, onRecsLoaded }: DiscoverViewProps): JSX.Element {
+  const [recommendations, setRecommendations] = useState<Recommendation[]>(cachedRecs || [])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [hasLoaded, setHasLoaded] = useState(false)
+  const [hasLoaded, setHasLoaded] = useState(!!cachedRecs?.length)
   const [hasApiKey, setHasApiKey] = useState<boolean | null>(null)
+  const [addingRec, setAddingRec] = useState<number | null>(null)
+  const [promptInput, setPromptInput] = useState('')
+  const [activePrompt, setActivePrompt] = useState<string | undefined>(undefined)
 
-  const fetchRecommendations = useCallback(async (): Promise<void> => {
+  const isInLibrary = useCallback((title: string, author: string): boolean => {
+    const normTitle = title.trim().toLowerCase()
+    const normAuthor = author.trim().toLowerCase()
+    return existingBooks.some((b) => {
+      return b.title.trim().toLowerCase() === normTitle && b.author.trim().toLowerCase() === normAuthor
+    })
+  }, [existingBooks])
+
+  const fetchRecommendations = useCallback(async (userPrompt?: string): Promise<void> => {
     setLoading(true)
     setError(null)
+    setActivePrompt(userPrompt)
     try {
-      const recs = await window.api.getRecommendations()
+      const recs = await window.api.getRecommendations(userPrompt)
       setRecommendations(recs)
       setHasLoaded(true)
+      onRecsLoaded?.(recs)
     } catch (err: any) {
       setError(err.message || 'Failed to get recommendations.')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [onRecsLoaded])
 
   useEffect(() => {
+    if (cachedRecs?.length) return
     window.api.getSettings().then((settings) => {
       const keyExists = !!settings.claudeApiKey
       setHasApiKey(keyExists)
       if (keyExists) fetchRecommendations()
     })
-  }, [fetchRecommendations])
+  }, [fetchRecommendations, cachedRecs])
 
-  if (hasApiKey === null) return <div />
+  const handleAddFromRec = async (rec: Recommendation, index: number): Promise<void> => {
+    if (addingRec !== null) return
+    setAddingRec(index)
 
-  if (!hasApiKey && !hasLoaded && !loading && !error) {
+    try {
+      // Search Open Library for cover and metadata
+      const results = await window.api.search(`${rec.title} ${rec.author}`)
+      const match = results[0]
+
+      const error = await onAddBook({
+        title: rec.title,
+        author: rec.author,
+        status: 'want-to-read',
+        rating: null,
+        review: null,
+        tags: [],
+        coverId: null,
+        summary: null,
+        dateRead: null
+      }, match ? {
+        openLibraryCoverId: match.coverId ?? undefined,
+        olKey: match.olKey
+      } : undefined)
+
+      if (error) {
+        setError(error)
+      }
+    } catch {
+      setError('Failed to add book.')
+    } finally {
+      setAddingRec(null)
+    }
+  }
+
+  const handleChipClick = (prompt: string): void => {
+    if (loading) return
+    setPromptInput('')
+    fetchRecommendations(prompt)
+  }
+
+  const handlePromptSubmit = (e: React.FormEvent): void => {
+    e.preventDefault()
+    if (loading || !promptInput.trim()) return
+    fetchRecommendations(promptInput.trim())
+  }
+
+  if (hasApiKey === null && !cachedRecs?.length) return <div />
+
+  if (!hasApiKey && !hasLoaded && !loading && !error && !cachedRecs?.length) {
     return (
       <div className="discover-empty">
         <Compass size={48} strokeWidth={1.2} />
         <h2>Discover Your Next Read</h2>
         <p>Get personalized book recommendations powered by Claude, based on your reading history, ratings, and reviews.</p>
         <div className="discover-empty-actions">
-          <button className="btn-primary" onClick={fetchRecommendations}>
+          <button className="btn-primary" onClick={() => fetchRecommendations()}>
             <BookOpenCheck size={16} />
             Get Recommendations
           </button>
@@ -68,12 +145,45 @@ export function DiscoverView({ onOpenSettings }: DiscoverViewProps): JSX.Element
         <h2 className="discover-title">Recommended for You</h2>
         <button
           className="btn-secondary discover-refresh"
-          onClick={fetchRecommendations}
+          onClick={() => fetchRecommendations(activePrompt)}
           disabled={loading}
         >
           {loading ? <Loader2 size={14} className="search-spinner" /> : <RefreshCw size={14} />}
           {loading ? 'Thinking...' : 'Refresh'}
         </button>
+      </div>
+
+      <div className="discover-prompt-section">
+        <div className="discover-chips">
+          {MOOD_CHIPS.map((chip) => (
+            <button
+              key={chip.label}
+              className="discover-chip"
+              onClick={() => handleChipClick(chip.prompt)}
+              disabled={loading}
+            >
+              {chip.label}
+            </button>
+          ))}
+          <button
+            className="discover-chip discover-chip-lucky"
+            onClick={() => handleChipClick('surprise me with something unexpected')}
+            disabled={loading}
+          >
+            <Sparkles size={12} />
+            Feeling Lucky
+          </button>
+        </div>
+        <form className="discover-prompt-form" onSubmit={handlePromptSubmit}>
+          <input
+            type="text"
+            className="discover-prompt-input"
+            value={promptInput}
+            onChange={(e) => setPromptInput(e.target.value)}
+            placeholder="Or describe what you're in the mood for..."
+            disabled={loading}
+          />
+        </form>
       </div>
 
       {error && (
@@ -90,16 +200,40 @@ export function DiscoverView({ onOpenSettings }: DiscoverViewProps): JSX.Element
 
       {recommendations.length > 0 && (
         <div className="recommendation-list">
-          {recommendations.map((rec, i) => (
-            <div key={i} className="recommendation-card">
-              <div className="recommendation-number">{i + 1}</div>
-              <div className="recommendation-content">
-                <h3 className="recommendation-title">{rec.title}</h3>
-                <p className="recommendation-author">{rec.author}</p>
-                <p className="recommendation-reason">{rec.reason}</p>
+          {recommendations.map((rec, i) => {
+            const inLibrary = isInLibrary(rec.title, rec.author)
+            return (
+              <div key={i} className="recommendation-card">
+                <div className="recommendation-number">{i + 1}</div>
+                <div className="recommendation-content">
+                  <h3 className="recommendation-title">{rec.title}</h3>
+                  <p className="recommendation-author">by {rec.author}</p>
+                  <p className="recommendation-reason">{rec.reason}</p>
+                </div>
+                <div className="recommendation-actions">
+                  {inLibrary ? (
+                    <span className="recommendation-in-library">
+                      <CheckCircle size={14} />
+                      In Library
+                    </span>
+                  ) : (
+                    <button
+                      className="btn-secondary recommendation-add-btn"
+                      onClick={() => handleAddFromRec(rec, i)}
+                      disabled={addingRec !== null}
+                    >
+                      {addingRec === i ? (
+                        <Loader2 size={14} className="search-spinner" />
+                      ) : (
+                        <Plus size={14} />
+                      )}
+                      {addingRec === i ? 'Adding...' : 'Add to Library'}
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>

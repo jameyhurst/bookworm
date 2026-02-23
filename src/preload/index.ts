@@ -10,7 +10,7 @@ export interface BookAPI {
   fetchSummary: (olKey: string) => Promise<string | null>
   getSettings: () => Promise<any>
   updateSettings: (updates: any) => Promise<any>
-  getRecommendations: () => Promise<any>
+  getRecommendations: (userPrompt?: string) => Promise<any>
   syncTheme: (theme: string) => Promise<void>
 }
 
@@ -24,7 +24,7 @@ const api: BookAPI = {
   fetchSummary: (olKey) => ipcRenderer.invoke('books:fetchSummary', olKey),
   getSettings: () => ipcRenderer.invoke('settings:get'),
   updateSettings: (updates) => ipcRenderer.invoke('settings:update', updates),
-  getRecommendations: () => ipcRenderer.invoke('discover:getRecommendations'),
+  getRecommendations: (userPrompt?) => ipcRenderer.invoke('discover:getRecommendations', userPrompt),
   syncTheme: (theme) => ipcRenderer.invoke('theme:sync', theme)
 }
 

@@ -2,8 +2,9 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { Sidebar } from './components/Sidebar'
 import { BookList } from './components/BookList'
 import { BookDetail } from './components/BookDetail'
-import { AddBookModal } from './components/AddBookModal'
+import { AddBookModal, type AddBookMeta } from './components/AddBookModal'
 import { DiscoverView } from './components/DiscoverView'
+import { ReportsView } from './components/ReportsView'
 import { SettingsModal } from './components/SettingsModal'
 import { HelpModal } from './components/HelpModal'
 import { ViewToggle, type ViewMode } from './components/ViewToggle'
@@ -32,13 +33,14 @@ export interface Book {
 
 function App(): JSX.Element {
   const [books, setBooks] = useState<Book[]>([])
-  const [activeFilter, setActiveFilter] = useState<BookStatus | 'all' | 'discover'>('all')
+  const [activeFilter, setActiveFilter] = useState<BookStatus | 'all' | 'discover' | 'reports'>('all')
   const [showAddModal, setShowAddModal] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
   const [selectedBookIndex, setSelectedBookIndex] = useState<number | null>(null)
   const [showDetail, setShowDetail] = useState(false)
   const [detailFocus, setDetailFocus] = useState<'default' | 'review'>('default')
+  const [detailBookId, setDetailBookId] = useState<number | null>(null)
   const [sidebarVisible, setSidebarVisible] = useState(true)
   const [sortBy, setSortBy] = useState<'default' | 'title' | 'author' | 'date'>('default')
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -49,6 +51,8 @@ function App(): JSX.Element {
   })
   const [toasts, setToasts] = useState<ToastItem[]>([])
   const nextToastId = useRef(0)
+  const [cachedRecs, setCachedRecs] = useState<any[] | null>(null)
+  const prefetchedRef = useRef(false)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -80,8 +84,22 @@ function App(): JSX.Element {
     loadBooks()
   }, [loadBooks])
 
+  // Prefetch discover recommendations in the background
+  useEffect(() => {
+    if (prefetchedRef.current || books.length === 0) return
+    const hasFinished = books.some((b) => b.status === 'finished')
+    if (!hasFinished) return
+    prefetchedRef.current = true
+    window.api.getSettings().then((settings) => {
+      if (!settings.claudeApiKey) return
+      window.api.getRecommendations().then((recs) => {
+        setCachedRecs(recs)
+      }).catch(() => {})
+    })
+  }, [books])
+
   const filtered =
-    activeFilter === 'all' || activeFilter === 'discover'
+    activeFilter === 'all' || activeFilter === 'discover' || activeFilter === 'reports'
       ? books
       : books.filter((b) => b.status === activeFilter)
 
@@ -102,6 +120,7 @@ function App(): JSX.Element {
   useEffect(() => {
     setSelectedBookIndex(null)
     setShowDetail(false)
+    setDetailBookId(null)
   }, [activeFilter])
 
   const counts = {
@@ -111,11 +130,61 @@ function App(): JSX.Element {
     finished: books.filter((b) => b.status === 'finished').length
   }
 
-  const handleAddBook = async (book: Omit<Book, 'id' | 'bookId' | 'dateAdded' | 'dateFinished'>): Promise<string | null> => {
+  const handleAddBook = async (
+    book: Omit<Book, 'id' | 'bookId' | 'dateAdded' | 'dateFinished'>,
+    meta?: AddBookMeta
+  ): Promise<string | null> => {
     const result = await window.api.add(book)
     if (result && 'error' in result) return result.error
     await loadBooks()
     addToast(`\u201c${book.title}\u201d added`, 'added')
+    setShowAddModal(false)
+    setDetailBookId(result.id)
+    setShowDetail(true)
+
+    // Background enrichment: download cover + fetch summary, then update
+    if (meta?.openLibraryCoverId || meta?.olKey) {
+      Promise.all([
+        meta.openLibraryCoverId ? window.api.downloadCover(meta.openLibraryCoverId) : null,
+        meta.olKey ? window.api.fetchSummary(meta.olKey) : null
+      ]).then(async ([coverId, summary]) => {
+        const updates: Partial<Book> = {}
+        if (coverId) updates.coverId = coverId
+        if (summary) updates.summary = summary
+        if (Object.keys(updates).length > 0) {
+          await handleUpdateBook(result.id, updates)
+        }
+      })
+    }
+
+    return null
+  }
+
+  const handleAddFromDiscover = async (
+    book: Omit<Book, 'id' | 'bookId' | 'dateAdded' | 'dateFinished'>,
+    meta?: AddBookMeta
+  ): Promise<string | null> => {
+    const result = await window.api.add(book)
+    if (result && 'error' in result) return result.error
+    await loadBooks()
+    addToast(`\u201c${book.title}\u201d added`, 'added')
+    setDetailBookId(result.id)
+    setShowDetail(true)
+
+    if (meta?.openLibraryCoverId || meta?.olKey) {
+      Promise.all([
+        meta.openLibraryCoverId ? window.api.downloadCover(meta.openLibraryCoverId) : null,
+        meta.olKey ? window.api.fetchSummary(meta.olKey) : null
+      ]).then(async ([coverId, summary]) => {
+        const updates: Partial<Book> = {}
+        if (coverId) updates.coverId = coverId
+        if (summary) updates.summary = summary
+        if (Object.keys(updates).length > 0) {
+          await handleUpdateBook(result.id, updates)
+        }
+      })
+    }
+
     return null
   }
 
@@ -129,6 +198,7 @@ function App(): JSX.Element {
     await window.api.delete(id)
     await loadBooks()
     setSelectedBookIndex(null)
+    if (detailBookId === id) setDetailBookId(null)
     if (title) addToast(`\u201c${title}\u201d removed`, 'deleted')
   }
 
@@ -136,16 +206,17 @@ function App(): JSX.Element {
 
   useKeyboardShortcuts({
     onAddBook: () => {
+      console.log(`[keys] onAddBook called — anyModal=${anyModal} (add=${showAddModal} detail=${showDetail} settings=${showSettings} help=${showHelp})`)
       if (!anyModal) setShowAddModal(true)
     },
     onToggleSidebar: () => {
       if (!anyModal) setSidebarVisible((v) => !v)
     },
     onGoToFilter: (filter) => {
-      if (!anyModal) setActiveFilter(filter as BookStatus | 'all' | 'discover')
+      if (!anyModal) setActiveFilter(filter as BookStatus | 'all' | 'discover' | 'reports')
     },
     onNavigate: (direction) => {
-      if (anyModal || filteredBooks.length === 0 || activeFilter === 'discover') return
+      if (anyModal || filteredBooks.length === 0 || activeFilter === 'discover' || activeFilter === 'reports') return
       if (viewMode === 'list' && (direction === 'left' || direction === 'right')) return
 
       setSelectedBookIndex((prev) => {
@@ -207,9 +278,11 @@ function App(): JSX.Element {
       if (!anyModal) setShowHelp(true)
     },
     onSortBy: (sort) => {
+      console.log(`[keys] onSortBy(${sort}) called — anyModal=${anyModal}`)
       if (!anyModal) setSortBy((prev) => prev === sort ? 'default' : sort as 'title' | 'author' | 'date')
     },
     onEscape: () => {
+      console.log(`[keys] onEscape — showHelp=${showHelp} showSettings=${showSettings} showAddModal=${showAddModal} showDetail=${showDetail} selectedBookIndex=${selectedBookIndex}`)
       if (showHelp) {
         setShowHelp(false)
       } else if (showSettings) {
@@ -218,6 +291,7 @@ function App(): JSX.Element {
         setShowAddModal(false)
       } else if (showDetail) {
         setShowDetail(false)
+        setDetailBookId(null)
       } else if (selectedBookIndex !== null) {
         setSelectedBookIndex(null)
       }
@@ -226,12 +300,23 @@ function App(): JSX.Element {
 
   const handleOpenBook = (index: number): void => {
     setSelectedBookIndex(index)
+    setDetailBookId(null)
     setDetailFocus('default')
     setShowDetail(true)
   }
 
   const selectedBook =
     selectedBookIndex !== null ? filteredBooks[selectedBookIndex] ?? null : null
+  const detailBook = detailBookId !== null ? books.find((b) => b.id === detailBookId) ?? null : null
+
+  // Safety net: if showDetail is true but there's no book to show, auto-recover
+  useEffect(() => {
+    if (showDetail && !detailBook && !selectedBook) {
+      console.log('[keys] auto-recovering: showDetail=true but no book to display')
+      setShowDetail(false)
+      setDetailBookId(null)
+    }
+  }, [showDetail, detailBook, selectedBook])
 
   return (
     <div className="app">
@@ -258,7 +343,7 @@ function App(): JSX.Element {
             )}
           </div>
           <div className="main-toolbar-right">
-            {activeFilter !== 'discover' && (
+            {activeFilter !== 'discover' && activeFilter !== 'reports' && (
               <>
                 <SortToggle mode={sortBy} onChange={setSortBy} />
                 <ViewToggle mode={viewMode} onChange={setViewMode} />
@@ -268,12 +353,21 @@ function App(): JSX.Element {
         </div>
         <main className="main-content">
           {activeFilter === 'discover' ? (
-            <DiscoverView onOpenSettings={() => setShowSettings(true)} />
+            <DiscoverView
+              onOpenSettings={() => setShowSettings(true)}
+              onAddBook={handleAddFromDiscover}
+              existingBooks={books}
+              cachedRecs={cachedRecs}
+              onRecsLoaded={setCachedRecs}
+            />
+          ) : activeFilter === 'reports' ? (
+            <ReportsView books={books} />
           ) : (
             <BookList
               books={filteredBooks}
               selectedBookIndex={selectedBookIndex}
               viewMode={viewMode}
+              sortBy={sortBy}
               onOpenBook={handleOpenBook}
               onUpdateBook={handleUpdateBook}
               onDelete={handleDeleteBook}
@@ -285,16 +379,17 @@ function App(): JSX.Element {
         <AddBookModal
           onAdd={handleAddBook}
           onClose={() => setShowAddModal(false)}
-          defaultStatus={activeFilter !== 'all' && activeFilter !== 'discover' ? activeFilter : undefined}
+          defaultStatus={activeFilter !== 'all' && activeFilter !== 'discover' && activeFilter !== 'reports' ? activeFilter : undefined}
+          existingBooks={books}
         />
       )}
-      {showDetail && selectedBook && (
+      {showDetail && (detailBook || selectedBook) && (
         <BookDetail
-          book={selectedBook}
+          book={(detailBook || selectedBook)!}
           initialFocus={detailFocus}
           onUpdateBook={handleUpdateBook}
           onDelete={handleDeleteBook}
-          onClose={() => { setShowDetail(false); setDetailFocus('default') }}
+          onClose={() => { setShowDetail(false); setDetailFocus('default'); setDetailBookId(null) }}
         />
       )}
       {showSettings && (

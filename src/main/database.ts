@@ -4,6 +4,7 @@ import { existsSync, readFileSync, writeFileSync } from 'fs'
 
 export interface Book {
   id: number
+  bookId: string
   title: string
   author: string
   status: 'want-to-read' | 'reading' | 'finished'
@@ -11,11 +12,17 @@ export interface Book {
   review: string | null
   tags: string[]
   coverId: number | null
+  summary: string | null
   dateAdded: string
   dateFinished: string | null
+  dateRead: string | null
 }
 
-export type NewBook = Omit<Book, 'id' | 'dateAdded' | 'dateFinished'>
+function makeBookId(title: string, author: string): string {
+  return `${title.trim().toLowerCase()}::${author.trim().toLowerCase()}`
+}
+
+export type NewBook = Omit<Book, 'id' | 'bookId' | 'dateAdded' | 'dateFinished'>
 
 export interface Settings {
   claudeApiKey: string | null
@@ -47,6 +54,8 @@ export class Database {
           delete b.currentPage
           if (b.review === undefined) b.review = null
           if (!Array.isArray(b.tags)) b.tags = []
+          if (!b.bookId) b.bookId = makeBookId(b.title || '', b.author || '')
+          if (b.summary === undefined) b.summary = null
           return b
         })
       }
@@ -71,12 +80,20 @@ export class Database {
     )
   }
 
-  addBook(book: NewBook): Book {
+  addBook(book: NewBook): Book | { error: string } {
+    const bookId = makeBookId(book.title, book.author)
+    const existing = this.store.books.find((b) => b.bookId === bookId)
+    if (existing) {
+      return { error: `"${existing.title}" by ${existing.author} is already in your library` }
+    }
+
     const newBook: Book = {
       ...book,
+      bookId,
       id: this.store.nextId++,
       dateAdded: new Date().toISOString(),
-      dateFinished: book.status === 'finished' ? new Date().toISOString() : null
+      dateFinished: book.status === 'finished' ? new Date().toISOString() : null,
+      dateRead: book.dateRead ?? null
     }
     this.store.books.push(newBook)
     this.save()

@@ -453,6 +453,23 @@ body {
   margin-top: 2px;
 }
 
+.book-summary-truncated {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin-top: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.book-summary {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
 .status-badge {
   font-size: 11px;
   font-weight: 600;
@@ -480,6 +497,14 @@ body {
 [data-theme="light"] .status-finished {
   background: var(--accent-deep);
   color: #fff;
+}
+
+[data-theme="light"] .btn-primary {
+  background: var(--accent-deep);
+}
+
+[data-theme="light"] .btn-primary:hover:not(:disabled) {
+  background: #2d7a24;
 }
 
 [data-theme="light"] .status-reading {
@@ -640,6 +665,11 @@ body {
   cursor: pointer;
 }
 
+.add-error {
+  font-size: 13px;
+  color: var(--danger);
+}
+
 /* ─── Modal Actions ─── */
 .modal-actions {
   display: flex;
@@ -775,7 +805,8 @@ body {
   transition: background 0.12s ease;
 }
 
-.search-result:hover {
+.search-result:hover,
+.search-result-selected {
   background: var(--bg-tertiary);
 }
 
@@ -1224,6 +1255,85 @@ body {
   color: var(--text-muted);
 }
 
+/* ─── Date Read ─── */
+.date-read-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.month-input {
+  padding: 8px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease;
+  color-scheme: dark;
+}
+
+[data-theme="light"] .month-input {
+  color-scheme: light;
+}
+
+.month-input:focus {
+  border-color: var(--accent);
+}
+
+.skip-date-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.skip-date-toggle input[type="checkbox"] {
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.date-help-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-muted);
+  margin-left: 2px;
+}
+
+.date-help-icon svg {
+  display: block;
+}
+
+.date-help-tooltip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 220px;
+  padding: 8px 10px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+  white-space: normal;
+  z-index: 10;
+}
+
+.date-help-icon:hover .date-help-tooltip {
+  display: block;
+}
+
 /* ─── Discover View ─── */
 .discover-empty {
   display: flex;
@@ -1266,6 +1376,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  line-height: 1;
 }
 
 .discover-empty-actions svg {
@@ -1530,4 +1641,76 @@ kbd {
   font-size: 10px;
   color: var(--text-muted);
   margin: 0 2px;
+}
+
+/* ─── Toast Notifications ─── */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+  z-index: 200;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  pointer-events: auto;
+  cursor: pointer;
+  animation: toastIn 0.3s ease-out;
+  white-space: nowrap;
+}
+
+.toast-icon {
+  flex-shrink: 0;
+  display: block;
+}
+
+.toast-icon--added {
+  color: var(--accent);
+}
+
+.toast-icon--deleted {
+  color: var(--text-muted);
+}
+
+.toast-message {
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.toast-exiting {
+  animation: toastOut 0.3s ease-in forwards;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes toastOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px);
+  }
 }

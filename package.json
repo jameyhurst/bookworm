@@ -10,11 +10,13 @@
     "package": "electron-vite build && electron-builder --mac --config"
   },
   "dependencies": {
+    "adm-zip": "^0.5.16",
     "lucide-react": "^0.575.0"
   },
   "devDependencies": {
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^4.0.0",
+    "@types/adm-zip": "^0.5.7",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.4",

@@ -2010,6 +2010,25 @@ body {
   color: var(--text-primary);
 }
 
+/* ─── Library Actions ─── */
+.library-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.library-actions .btn-secondary {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.library-actions .btn-secondary svg {
+  display: block;
+  flex-shrink: 0;
+}
+
 /* ─── Help Modal ─── */
 .help-modal {
   width: 520px;

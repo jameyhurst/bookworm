@@ -8,17 +8,36 @@ interface BookListProps {
   books: Book[]
   selectedBookIndex: number | null
   viewMode: ViewMode
+  sortBy: 'default' | 'title' | 'author' | 'date'
   onOpenBook: (index: number) => void
   onUpdateBook: (id: number, updates: Partial<Book>) => void
   onDelete: (id: number) => void
 }
 
-export function BookList({ books, selectedBookIndex, viewMode, onOpenBook, onUpdateBook, onDelete }: BookListProps): JSX.Element {
+function getSectionKey(book: Book, sortBy: string): string | null {
+  if (sortBy === 'title') {
+    const first = book.title.charAt(0).toUpperCase()
+    return /[A-Z]/.test(first) ? first : '#'
+  }
+  if (sortBy === 'author') {
+    const words = book.author.trim().split(/\s+/)
+    const last = words[words.length - 1]
+    const first = last.charAt(0).toUpperCase()
+    return /[A-Z]/.test(first) ? first : '#'
+  }
+  if (sortBy === 'date') {
+    const d = book.dateFinished || book.dateAdded
+    return d ? new Date(d).getFullYear().toString() : 'Unknown'
+  }
+  return null
+}
+
+export function BookList({ books, selectedBookIndex, viewMode, sortBy, onOpenBook, onUpdateBook, onDelete }: BookListProps): JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (selectedBookIndex === null || !containerRef.current) return
-    const card = containerRef.current.children[selectedBookIndex] as HTMLElement | undefined
+    const card = containerRef.current.querySelector(`[data-book-index="${selectedBookIndex}"]`) as HTMLElement | undefined
     card?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
   }, [selectedBookIndex])
 
@@ -32,20 +51,36 @@ export function BookList({ books, selectedBookIndex, viewMode, onOpenBook, onUpd
     )
   }
 
+  const elements: JSX.Element[] = []
+  let lastSection: string | null = null
+
+  books.forEach((book, i) => {
+    const section = getSectionKey(book, sortBy)
+    if (section !== null && section !== lastSection) {
+      elements.push(
+        <div key={`section-${section}`} className="book-list-section-header">
+          {section}
+        </div>
+      )
+      lastSection = section
+    }
+    elements.push(
+      <BookCard
+        key={book.id}
+        book={book}
+        isSelected={selectedBookIndex === i}
+        viewMode={viewMode}
+        index={i}
+        onOpen={() => onOpenBook(i)}
+        onUpdateBook={onUpdateBook}
+        onDelete={onDelete}
+      />
+    )
+  })
+
   return (
     <div ref={containerRef} className={viewMode === 'grid' ? 'book-grid' : 'book-list'}>
-      {books.map((book, i) => (
-        <BookCard
-          key={book.id}
-          book={book}
-          isSelected={selectedBookIndex === i}
-          viewMode={viewMode}
-          index={i}
-          onOpen={() => onOpenBook(i)}
-          onUpdateBook={onUpdateBook}
-          onDelete={onDelete}
-        />
-      ))}
+      {elements}
     </div>
   )
 }

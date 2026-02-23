@@ -80,6 +80,7 @@ export function HelpModal({ onClose }: HelpModalProps): JSX.Element {
             <ShortcutRow label="Currently Reading" keys={['g', 'c']} />
             <ShortcutRow label="Read Books" keys={['g', 'r']} />
             <ShortcutRow label="Discover" keys={['g', 'd']} />
+            <ShortcutRow label="Reports" keys={['g', 'p']} />
           </div>
 
           <div className="help-section">

@@ -38,6 +38,7 @@ export function BookCard({ book, isSelected, viewMode, index, onOpen, onDelete }
       <div
         className={`book-card-grid book-card--${book.status}${isSelected ? ' book-card-selected' : ''}`}
         onClick={onOpen}
+        data-book-index={index}
         style={{ cursor: 'pointer', animationDelay: `${staggerDelay}ms` }}
       >
         {book.coverId ? (
@@ -74,6 +75,7 @@ export function BookCard({ book, isSelected, viewMode, index, onOpen, onDelete }
     <div
       className={`book-card book-card--${book.status}${isSelected ? ' book-card-selected' : ''}`}
       onClick={onOpen}
+      data-book-index={index}
       style={{ cursor: 'pointer', animationDelay: `${staggerDelay}ms` }}
     >
       {book.coverId ? (

@@ -53,6 +53,7 @@ function App(): JSX.Element {
   const nextToastId = useRef(0)
   const [cachedRecs, setCachedRecs] = useState<any[] | null>(null)
   const prefetchedRef = useRef(false)
+  const skipFilterResetRef = useRef(false)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -116,8 +117,12 @@ function App(): JSX.Element {
             })
           : filtered
 
-  // Reset selection when filter changes
+  // Reset selection when filter changes (skip when following a book to its new shelf)
   useEffect(() => {
+    if (skipFilterResetRef.current) {
+      skipFilterResetRef.current = false
+      return
+    }
     setSelectedBookIndex(null)
     setShowDetail(false)
     setDetailBookId(null)
@@ -190,6 +195,16 @@ function App(): JSX.Element {
 
   const handleUpdateBook = async (id: number, updates: Partial<Book>): Promise<void> => {
     await window.api.update(id, updates)
+
+    // Follow the book to its new shelf when status changes in the detail modal
+    const isShelfFilter =
+      activeFilter === 'want-to-read' || activeFilter === 'reading' || activeFilter === 'finished'
+    if (updates.status && isShelfFilter && updates.status !== activeFilter && showDetail) {
+      skipFilterResetRef.current = true
+      setDetailBookId(id)
+      setActiveFilter(updates.status)
+    }
+
     await loadBooks()
   }
 
@@ -361,7 +376,14 @@ function App(): JSX.Element {
               onRecsLoaded={setCachedRecs}
             />
           ) : activeFilter === 'reports' ? (
-            <ReportsView books={books} />
+            <ReportsView
+              books={books}
+              onBookClick={(id) => {
+                setDetailBookId(id)
+                setDetailFocus('default')
+                setShowDetail(true)
+              }}
+            />
           ) : (
             <BookList
               books={filteredBooks}

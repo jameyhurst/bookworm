@@ -33,12 +33,17 @@ export async function getRecommendations(
     })
     .join('\n')
 
+  const otherBooks = books.filter((b) => b.status !== 'finished')
+  const exclusionList = otherBooks.length > 0
+    ? `\n\nAlso already in my library (do NOT recommend these either):\n${otherBooks.map((b) => `- "${b.title}" by ${b.author}`).join('\n')}`
+    : ''
+
   const prompt = `Based on the following books I've read and enjoyed, recommend exactly 5 books I might like. Consider my ratings, moods, reviews, and reading timeline to understand my taste. Books without a date are older reads added retroactively.
 
 My finished books:
-${bookSummaries}
+${bookSummaries}${exclusionList}
 
-Respond with ONLY a JSON array of 5 objects, each with "title", "author", and "reason" fields. The reason should be 1-2 sentences explaining why I'd enjoy it, referencing specific books or patterns from my reading history. Do not recommend books I've already read. Do not include any text outside the JSON array.${userPrompt ? `\nAdditional preference: ${userPrompt}` : ''}`
+Respond with ONLY a JSON array of 5 objects, each with "title", "author", and "reason" fields. The reason should be 1-2 sentences explaining why I'd enjoy it, referencing specific books or patterns from my reading history. Do not recommend any books listed above. Do not include any text outside the JSON array.${userPrompt ? `\nAdditional preference: ${userPrompt}` : ''}`
 
   const response = await net.fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',

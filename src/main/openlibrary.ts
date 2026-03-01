@@ -25,23 +25,24 @@ function mapDocs(docs: any[]): SearchResult[] {
   }))
 }
 
-export async function searchBooks(query: string): Promise<SearchResult[]> {
-  const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=10&fields=${SEARCH_FIELDS}`
+export async function searchBooks(query: string, offset = 0): Promise<SearchResult[]> {
+  const PAGE_SIZE = 10
+  const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=${PAGE_SIZE}&offset=${offset}&fields=${SEARCH_FIELDS}`
 
   const response = await net.fetch(url, { signal: AbortSignal.timeout(6000) })
   const data = await response.json()
 
   let results = mapDocs(data.docs || [])
 
-  // Fallback: retry with title= parameter if broad search returned nothing
-  if (results.length === 0) {
-    const titleUrl = `https://openlibrary.org/search.json?title=${encodeURIComponent(query)}&limit=10&fields=${SEARCH_FIELDS}`
+  // Fallback: retry with title= parameter if broad search returned nothing (first page only)
+  if (results.length === 0 && offset === 0) {
+    const titleUrl = `https://openlibrary.org/search.json?title=${encodeURIComponent(query)}&limit=${PAGE_SIZE}&fields=${SEARCH_FIELDS}`
     const titleResponse = await net.fetch(titleUrl, { signal: AbortSignal.timeout(6000) })
     const titleData = await titleResponse.json()
     results = mapDocs(titleData.docs || [])
   }
 
-  return results.slice(0, 8)
+  return results
 }
 
 function cleanSummary(raw: string): string {

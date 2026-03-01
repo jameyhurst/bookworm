@@ -89,7 +89,7 @@ function registerIpcHandlers(): void {
   ipcMain.handle('books:add', (_event, book) => db.addBook(book))
   ipcMain.handle('books:update', (_event, id, updates) => db.updateBook(id, updates))
   ipcMain.handle('books:delete', (_event, id) => db.deleteBook(id))
-  ipcMain.handle('books:search', (_event, query: string) => searchBooks(query))
+  ipcMain.handle('books:search', (_event, query: string, offset?: number) => searchBooks(query, offset))
   ipcMain.handle('books:downloadCover', async (_event, coverId: number) => {
     const path = await downloadCover(coverId)
     return path ? coverId : null

@@ -11,7 +11,7 @@ import { ViewToggle, type ViewMode } from './components/ViewToggle'
 import { SortToggle } from './components/SortToggle'
 import { Toast, type ToastItem } from './components/Toast'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
-import { PanelLeftOpen } from 'lucide-react'
+import { PanelLeftOpen, Search, X } from 'lucide-react'
 
 export type BookStatus = 'want-to-read' | 'reading' | 'finished'
 
@@ -35,6 +35,8 @@ function App(): JSX.Element {
   const [books, setBooks] = useState<Book[]>([])
   const [activeFilter, setActiveFilter] = useState<BookStatus | 'all' | 'discover' | 'reports'>('all')
   const [showAddModal, setShowAddModal] = useState(false)
+  const [addModalKey, setAddModalKey] = useState(0)
+  const returnToAddRef = useRef(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
   const [selectedBookIndex, setSelectedBookIndex] = useState<number | null>(null)
@@ -42,7 +44,7 @@ function App(): JSX.Element {
   const [detailFocus, setDetailFocus] = useState<'default' | 'review'>('default')
   const [detailBookId, setDetailBookId] = useState<number | null>(null)
   const [sidebarVisible, setSidebarVisible] = useState(true)
-  const [sortBy, setSortBy] = useState<'default' | 'title' | 'author' | 'date'>('default')
+  const [sortBy, setSortBy] = useState<'date-added' | 'title' | 'author' | 'date-read'>('date-added')
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     return (localStorage.getItem('bookworm-theme') as 'dark' | 'light') || 'dark'
   })
@@ -51,7 +53,11 @@ function App(): JSX.Element {
   })
   const [toasts, setToasts] = useState<ToastItem[]>([])
   const nextToastId = useRef(0)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showSearch, setShowSearch] = useState(false)
+  const searchInputRef = useRef<HTMLInputElement>(null)
   const [cachedRecs, setCachedRecs] = useState<any[] | null>(null)
+  const [discoverRefreshHint, setDiscoverRefreshHint] = useState(0)
   const prefetchedRef = useRef(false)
   const skipFilterResetRef = useRef(false)
 
@@ -66,6 +72,18 @@ function App(): JSX.Element {
   }, [viewMode])
 
   const toggleTheme = (): void => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))
+
+  useEffect(() => {
+    const handleCmdF = (e: KeyboardEvent): void => {
+      if (e.key === 'f' && e.metaKey) {
+        e.preventDefault()
+        setShowSearch(true)
+        setTimeout(() => searchInputRef.current?.focus(), 0)
+      }
+    }
+    document.addEventListener('keydown', handleCmdF)
+    return () => document.removeEventListener('keydown', handleCmdF)
+  }, [])
 
   const addToast = useCallback((message: string, type: ToastItem['type']) => {
     const id = nextToastId.current++
@@ -104,18 +122,29 @@ function App(): JSX.Element {
       ? books
       : books.filter((b) => b.status === activeFilter)
 
+  const stripArticle = (t: string): string =>
+    t.replace(/^(the|a|an|le|la|les|un|une|el|las|los|una|il|lo|gli|i|uno|o|os|as|um|uma)\s+/i, '')
+     .replace(/^l'/i, '')
+
   const filteredBooks =
     sortBy === 'title'
-      ? [...filtered].sort((a, b) => a.title.localeCompare(b.title))
+      ? [...filtered].sort((a, b) => stripArticle(a.title).localeCompare(stripArticle(b.title)))
       : sortBy === 'author'
         ? [...filtered].sort((a, b) => a.author.localeCompare(b.author))
-        : sortBy === 'date'
+        : sortBy === 'date-read'
           ? [...filtered].sort((a, b) => {
-              const da = a.dateFinished || a.dateAdded
-              const db = b.dateFinished || b.dateAdded
+              const da = a.dateRead || a.dateAdded
+              const db = b.dateRead || b.dateAdded
               return new Date(db).getTime() - new Date(da).getTime()
             })
-          : filtered
+          : [...filtered].sort((a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime())
+
+  const searchedBooks = searchQuery.trim()
+    ? filteredBooks.filter((b) => {
+        const q = searchQuery.trim().toLowerCase()
+        return b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q)
+      })
+    : filteredBooks
 
   // Reset selection when filter changes (skip when following a book to its new shelf)
   useEffect(() => {
@@ -126,6 +155,8 @@ function App(): JSX.Element {
     setSelectedBookIndex(null)
     setShowDetail(false)
     setDetailBookId(null)
+    setShowSearch(false)
+    setSearchQuery('')
   }, [activeFilter])
 
   const counts = {
@@ -144,7 +175,9 @@ function App(): JSX.Element {
     await loadBooks()
     addToast(`\u201c${book.title}\u201d added`, 'added')
     setShowAddModal(false)
+    returnToAddRef.current = true
     setDetailBookId(result.id)
+    setDetailFocus('default')
     setShowDetail(true)
 
     // Background enrichment: download cover + fetch summary, then update
@@ -231,7 +264,7 @@ function App(): JSX.Element {
       if (!anyModal) setActiveFilter(filter as BookStatus | 'all' | 'discover' | 'reports')
     },
     onNavigate: (direction) => {
-      if (anyModal || filteredBooks.length === 0 || activeFilter === 'discover' || activeFilter === 'reports') return
+      if (anyModal || searchedBooks.length === 0 || activeFilter === 'discover' || activeFilter === 'reports') return
       if (viewMode === 'list' && (direction === 'left' || direction === 'right')) return
 
       setSelectedBookIndex((prev) => {
@@ -250,38 +283,38 @@ function App(): JSX.Element {
           }
         }
 
-        if (direction === 'down' || direction === 'right') return Math.min(prev + step, filteredBooks.length - 1)
+        if (direction === 'down' || direction === 'right') return Math.min(prev + step, searchedBooks.length - 1)
         return Math.max(prev - step, 0)
       })
     },
     onOpenSelected: () => {
       if (anyModal) return
-      if (selectedBookIndex !== null && filteredBooks[selectedBookIndex]) {
+      if (selectedBookIndex !== null && searchedBooks[selectedBookIndex]) {
         setDetailFocus('default')
         setShowDetail(true)
       }
     },
     onRateSelected: (rating) => {
       if (showAddModal || showSettings || showHelp) return
-      if (selectedBookIndex !== null && filteredBooks[selectedBookIndex]) {
-        handleUpdateBook(filteredBooks[selectedBookIndex].id, { rating })
+      if (selectedBookIndex !== null && searchedBooks[selectedBookIndex]) {
+        handleUpdateBook(searchedBooks[selectedBookIndex].id, { rating })
       }
     },
     onSetStatusSelected: (status) => {
       if (showAddModal || showSettings || showHelp) return
-      if (selectedBookIndex !== null && filteredBooks[selectedBookIndex]) {
-        handleUpdateBook(filteredBooks[selectedBookIndex].id, { status: status as BookStatus })
+      if (selectedBookIndex !== null && searchedBooks[selectedBookIndex]) {
+        handleUpdateBook(searchedBooks[selectedBookIndex].id, { status: status as BookStatus })
       }
     },
     onDeleteSelected: () => {
       if (showAddModal || showSettings || showHelp) return
-      if (selectedBookIndex !== null && filteredBooks[selectedBookIndex]) {
-        handleDeleteBook(filteredBooks[selectedBookIndex].id)
+      if (selectedBookIndex !== null && searchedBooks[selectedBookIndex]) {
+        handleDeleteBook(searchedBooks[selectedBookIndex].id)
       }
     },
     onEditReview: () => {
       if (showAddModal || showSettings || showHelp) return
-      if (selectedBookIndex !== null && filteredBooks[selectedBookIndex]) {
+      if (selectedBookIndex !== null && searchedBooks[selectedBookIndex]) {
         setDetailFocus('review')
         setShowDetail(true)
       }
@@ -294,7 +327,7 @@ function App(): JSX.Element {
     },
     onSortBy: (sort) => {
       console.log(`[keys] onSortBy(${sort}) called — anyModal=${anyModal}`)
-      if (!anyModal) setSortBy((prev) => prev === sort ? 'default' : sort as 'title' | 'author' | 'date')
+      if (!anyModal) setSortBy((prev) => prev === sort ? 'date-added' : sort as 'title' | 'author' | 'date-read')
     },
     onEscape: () => {
       console.log(`[keys] onEscape — showHelp=${showHelp} showSettings=${showSettings} showAddModal=${showAddModal} showDetail=${showDetail} selectedBookIndex=${selectedBookIndex}`)
@@ -302,11 +335,15 @@ function App(): JSX.Element {
         setShowHelp(false)
       } else if (showSettings) {
         setShowSettings(false)
+        setDiscoverRefreshHint((n) => n + 1)
       } else if (showAddModal) {
         setShowAddModal(false)
       } else if (showDetail) {
         setShowDetail(false)
         setDetailBookId(null)
+      } else if (showSearch) {
+        setShowSearch(false)
+        setSearchQuery('')
       } else if (selectedBookIndex !== null) {
         setSelectedBookIndex(null)
       }
@@ -321,7 +358,7 @@ function App(): JSX.Element {
   }
 
   const selectedBook =
-    selectedBookIndex !== null ? filteredBooks[selectedBookIndex] ?? null : null
+    selectedBookIndex !== null ? searchedBooks[selectedBookIndex] ?? null : null
   const detailBook = detailBookId !== null ? books.find((b) => b.id === detailBookId) ?? null : null
 
   // Safety net: if showDetail is true but there's no book to show, auto-recover
@@ -356,6 +393,31 @@ function App(): JSX.Element {
                 <PanelLeftOpen size={18} />
               </button>
             )}
+            {showSearch && activeFilter !== 'discover' && activeFilter !== 'reports' && (
+              <div className="toolbar-search">
+                <Search size={14} className="toolbar-search-icon" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  className="toolbar-search-input"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Find a book..."
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                      setShowSearch(false)
+                      setSearchQuery('')
+                    }
+                  }}
+                />
+                <button
+                  className="toolbar-search-close"
+                  onClick={() => { setShowSearch(false); setSearchQuery('') }}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
           </div>
           <div className="main-toolbar-right">
             {activeFilter !== 'discover' && activeFilter !== 'reports' && (
@@ -374,6 +436,7 @@ function App(): JSX.Element {
               existingBooks={books}
               cachedRecs={cachedRecs}
               onRecsLoaded={setCachedRecs}
+              refreshHint={discoverRefreshHint}
             />
           ) : activeFilter === 'reports' ? (
             <ReportsView
@@ -386,19 +449,23 @@ function App(): JSX.Element {
             />
           ) : (
             <BookList
-              books={filteredBooks}
+              books={searchedBooks}
+              activeFilter={activeFilter}
               selectedBookIndex={selectedBookIndex}
               viewMode={viewMode}
               sortBy={sortBy}
               onOpenBook={handleOpenBook}
               onUpdateBook={handleUpdateBook}
               onDelete={handleDeleteBook}
+              onAddBook={() => setShowAddModal(true)}
+              onDiscover={() => setActiveFilter('discover')}
             />
           )}
         </main>
       </div>
       {showAddModal && (
         <AddBookModal
+          key={addModalKey}
           onAdd={handleAddBook}
           onClose={() => setShowAddModal(false)}
           defaultStatus={activeFilter !== 'all' && activeFilter !== 'discover' && activeFilter !== 'reports' ? activeFilter : undefined}
@@ -411,12 +478,21 @@ function App(): JSX.Element {
           initialFocus={detailFocus}
           onUpdateBook={handleUpdateBook}
           onDelete={handleDeleteBook}
-          onClose={() => { setShowDetail(false); setDetailFocus('default'); setDetailBookId(null) }}
+          onClose={() => {
+            setShowDetail(false)
+            setDetailFocus('default')
+            setDetailBookId(null)
+            if (returnToAddRef.current) {
+              returnToAddRef.current = false
+              setAddModalKey((k) => k + 1)
+              setShowAddModal(true)
+            }
+          }}
         />
       )}
       {showSettings && (
         <SettingsModal
-          onClose={() => setShowSettings(false)}
+          onClose={() => { setShowSettings(false); setDiscoverRefreshHint((n) => n + 1) }}
           theme={theme}
           onToggleTheme={toggleTheme}
           onLibraryImported={() => { loadBooks(); setCachedRecs(null); prefetchedRef.current = false }}

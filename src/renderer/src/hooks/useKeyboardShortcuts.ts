@@ -118,7 +118,8 @@ export function useKeyboardShortcuts(callbacks: ShortcutCallbacks): {
           const sortMap: Record<string, string> = {
             a: 'author',
             t: 'title',
-            d: 'date'
+            d: 'date-read',
+            r: 'date-added'
           }
           if (sortMap[key]) cbRef.current.onSortBy(sortMap[key])
         }

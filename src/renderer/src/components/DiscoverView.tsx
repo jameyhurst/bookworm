@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Compass, RefreshCw, Loader2, Settings, BookOpenCheck, Plus, CheckCircle, Sparkles, KeyRound, BookOpen, AlertCircle } from 'lucide-react'
+import { RefreshCw, Loader2, Settings, Plus, CheckCircle, Sparkles, KeyRound, BookOpen, AlertCircle } from 'lucide-react'
 import { Book } from '../App'
 import type { AddBookMeta } from './AddBookModal'
 
@@ -15,6 +15,7 @@ interface DiscoverViewProps {
   existingBooks: Book[]
   cachedRecs?: Recommendation[] | null
   onRecsLoaded?: (recs: Recommendation[]) => void
+  refreshHint?: number
 }
 
 function sanitizeError(msg: string): string {
@@ -67,12 +68,11 @@ const MOOD_CHIPS = [
   { label: 'Short Reads', prompt: 'short books under 250 pages' }
 ]
 
-export function DiscoverView({ onOpenSettings, onAddBook, existingBooks, cachedRecs, onRecsLoaded }: DiscoverViewProps): JSX.Element {
+export function DiscoverView({ onOpenSettings, onAddBook, existingBooks, cachedRecs, onRecsLoaded, refreshHint }: DiscoverViewProps): JSX.Element {
   const [recommendations, setRecommendations] = useState<Recommendation[]>(cachedRecs || [])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasLoaded, setHasLoaded] = useState(!!cachedRecs?.length)
-  const [hasApiKey, setHasApiKey] = useState<boolean | null>(null)
   const [addingRec, setAddingRec] = useState<number | null>(null)
   const [promptInput, setPromptInput] = useState('')
   const [activePrompt, setActivePrompt] = useState<string | undefined>(undefined)
@@ -113,12 +113,8 @@ export function DiscoverView({ onOpenSettings, onAddBook, existingBooks, cachedR
 
   useEffect(() => {
     if (cachedRecs?.length) return
-    window.api.getSettings().then((settings) => {
-      const keyExists = !!settings.claudeApiKey
-      setHasApiKey(keyExists)
-      if (keyExists) fetchRecommendations()
-    })
-  }, [fetchRecommendations, cachedRecs])
+    fetchRecommendations()
+  }, [fetchRecommendations, cachedRecs, refreshHint])
 
   const handleAddFromRec = async (rec: Recommendation, index: number): Promise<void> => {
     if (addingRec !== null) return
@@ -205,28 +201,6 @@ export function DiscoverView({ onOpenSettings, onAddBook, existingBooks, cachedR
       <div className="discover-notice discover-notice--error">
         <AlertCircle size={18} strokeWidth={1.5} className="discover-notice-icon" />
         <p className="discover-notice-text">{error}</p>
-      </div>
-    )
-  }
-
-  if (hasApiKey === null && !cachedRecs?.length) return <div />
-
-  if (!hasApiKey && !hasLoaded && !loading && !error && !cachedRecs?.length) {
-    return (
-      <div className="discover-empty">
-        <Compass size={48} strokeWidth={1.2} />
-        <h2>Discover Your Next Read</h2>
-        <p>Get personalized book recommendations powered by Claude, based on your reading history, ratings, and reviews.</p>
-        <div className="discover-empty-actions">
-          <button className="btn-primary" onClick={() => fetchRecommendations()}>
-            <BookOpenCheck size={16} />
-            Get Recommendations
-          </button>
-          <button className="btn-secondary" onClick={onOpenSettings}>
-            <Settings size={14} />
-            API Key Settings
-          </button>
-        </div>
       </div>
     )
   }

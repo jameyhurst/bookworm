@@ -1,22 +1,37 @@
 import { useEffect, useRef } from 'react'
-import { BookOpenCheck } from 'lucide-react'
-import { Book } from '../App'
+import { BookOpenCheck, Plus, Compass } from 'lucide-react'
+import { Book, BookStatus } from '../App'
 import { BookCard } from './BookCard'
 import type { ViewMode } from './ViewToggle'
 
 interface BookListProps {
   books: Book[]
+  activeFilter: BookStatus | 'all' | 'discover' | 'reports'
   selectedBookIndex: number | null
   viewMode: ViewMode
-  sortBy: 'default' | 'title' | 'author' | 'date'
+  sortBy: 'date-added' | 'title' | 'author' | 'date-read'
   onOpenBook: (index: number) => void
   onUpdateBook: (id: number, updates: Partial<Book>) => void
   onDelete: (id: number) => void
+  onAddBook: () => void
+  onDiscover: () => void
+}
+
+const EMPTY_STATES: Record<string, { heading: string; subtitle: string }> = {
+  all: { heading: 'Nothing on the nightstand', subtitle: 'Your shelf won\u2019t fill itself \u2014 add a book!' },
+  'want-to-read': { heading: 'No wishlist yet', subtitle: 'Find something that catches your eye' },
+  reading: { heading: 'Between books?', subtitle: 'Pick up something new \u2014 or revisit an old favorite' },
+  finished: { heading: 'No page-turners yet', subtitle: 'Finish a book and it\u2019ll show up here' }
+}
+
+function stripArticle(t: string): string {
+  return t.replace(/^(the|a|an|le|la|les|un|une|el|las|los|una|il|lo|gli|i|uno|o|os|as|um|uma)\s+/i, '')
+    .replace(/^l'/i, '')
 }
 
 function getSectionKey(book: Book, sortBy: string): string | null {
   if (sortBy === 'title') {
-    const first = book.title.charAt(0).toUpperCase()
+    const first = stripArticle(book.title).charAt(0).toUpperCase()
     return /[A-Z]/.test(first) ? first : '#'
   }
   if (sortBy === 'author') {
@@ -25,14 +40,14 @@ function getSectionKey(book: Book, sortBy: string): string | null {
     const first = last.charAt(0).toUpperCase()
     return /[A-Z]/.test(first) ? first : '#'
   }
-  if (sortBy === 'date') {
-    const d = book.dateFinished || book.dateAdded
+  if (sortBy === 'date-read') {
+    const d = book.dateRead || book.dateAdded
     return d ? new Date(d).getFullYear().toString() : 'Unknown'
   }
   return null
 }
 
-export function BookList({ books, selectedBookIndex, viewMode, sortBy, onOpenBook, onUpdateBook, onDelete }: BookListProps): JSX.Element {
+export function BookList({ books, activeFilter, selectedBookIndex, viewMode, sortBy, onOpenBook, onUpdateBook, onDelete, onAddBook, onDiscover }: BookListProps): JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -42,11 +57,22 @@ export function BookList({ books, selectedBookIndex, viewMode, sortBy, onOpenBoo
   }, [selectedBookIndex])
 
   if (books.length === 0) {
+    const { heading, subtitle } = EMPTY_STATES[activeFilter] || EMPTY_STATES.all
     return (
       <div className="empty-state">
         <BookOpenCheck size={48} strokeWidth={1.2} />
-        <h2>No books yet</h2>
-        <p>Add your first book to start tracking your reading</p>
+        <h2>{heading}</h2>
+        <p>{subtitle}</p>
+        <div className="empty-state-actions">
+          <button className="btn-primary" onClick={onAddBook}>
+            <Plus size={16} />
+            Add Book
+          </button>
+          <button className="btn-primary" onClick={onDiscover}>
+            <Compass size={16} />
+            Discover
+          </button>
+        </div>
       </div>
     )
   }

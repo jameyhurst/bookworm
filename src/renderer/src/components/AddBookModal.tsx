@@ -38,6 +38,9 @@ export function AddBookModal({ onAdd, onClose, defaultStatus, existingBooks = []
   const [author, setAuthor] = useState('')
   const [addError, setAddError] = useState<string | null>(null)
   const [selectedResult, setSelectedResult] = useState(-1)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(false)
+  const lastQueryRef = useRef('')
   const resultsRef = useRef<HTMLDivElement>(null)
 
   const isDupe = (title: string, author: string): boolean => {
@@ -45,22 +48,42 @@ export function AddBookModal({ onAdd, onClose, defaultStatus, existingBooks = []
     return existingBooks.some((b) => b.bookId === bookId)
   }
 
+  const PAGE_SIZE = 10
+
   const doSearch = useCallback(async (q: string) => {
     if (q.trim().length < 2) {
       setResults([])
+      setHasMore(false)
       return
     }
     setSearching(true)
+    lastQueryRef.current = q.trim()
     try {
-      const data = await window.api.search(q.trim())
+      const data = await window.api.search(q.trim(), 0)
       setResults(data)
       setSelectedResult(-1)
+      setHasMore(data.length >= PAGE_SIZE)
     } catch {
       setResults([])
+      setHasMore(false)
     } finally {
       setSearching(false)
     }
   }, [])
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore || !lastQueryRef.current) return
+    setLoadingMore(true)
+    try {
+      const data = await window.api.search(lastQueryRef.current, results.length)
+      setResults((prev) => [...prev, ...data])
+      setHasMore(data.length >= PAGE_SIZE)
+    } catch {
+      setHasMore(false)
+    } finally {
+      setLoadingMore(false)
+    }
+  }, [loadingMore, hasMore, results.length])
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -82,7 +105,7 @@ export function AddBookModal({ onAdd, onClose, defaultStatus, existingBooks = []
       tags: [],
       coverId: null,
       summary: null,
-      dateRead: new Date().toISOString().slice(0, 7)
+      dateRead: (defaultStatus ?? 'want-to-read') === 'finished' ? new Date().toISOString().slice(0, 7) : null
     }, {
       openLibraryCoverId: result.coverId ?? undefined,
       olKey: result.olKey
@@ -110,7 +133,7 @@ export function AddBookModal({ onAdd, onClose, defaultStatus, existingBooks = []
       tags: [],
       coverId: null,
       summary: null,
-      dateRead: new Date().toISOString().slice(0, 7)
+      dateRead: (defaultStatus ?? 'want-to-read') === 'finished' ? new Date().toISOString().slice(0, 7) : null
     })
 
     if (error) {
@@ -176,7 +199,16 @@ export function AddBookModal({ onAdd, onClose, defaultStatus, existingBooks = []
 
             {addError && <p className="add-error">{addError}</p>}
 
-            <div className="search-results" ref={resultsRef}>
+            <div
+              className="search-results"
+              ref={resultsRef}
+              onScroll={(e) => {
+                const el = e.currentTarget
+                if (el.scrollTop + el.clientHeight >= el.scrollHeight - 40) {
+                  loadMore()
+                }
+              }}
+            >
               {results.map((result, i) => (
                 <button
                   key={`${result.olKey}-${i}`}
@@ -212,6 +244,19 @@ export function AddBookModal({ onAdd, onClose, defaultStatus, existingBooks = []
 
               {query.trim().length >= 2 && !searching && results.length === 0 && (
                 <div className="search-empty">No results found</div>
+              )}
+              {hasMore && (
+                <button
+                  className="search-load-more"
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                >
+                  {loadingMore ? (
+                    <><Loader2 size={14} className="search-spinner" /> Loading...</>
+                  ) : (
+                    'Load more results'
+                  )}
+                </button>
               )}
             </div>
 

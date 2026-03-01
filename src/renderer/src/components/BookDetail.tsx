@@ -30,6 +30,7 @@ export function BookDetail({
   onClose
 }: BookDetailProps): JSX.Element {
   const [review, setReview] = useState(book.review || '')
+  const [localDateRead, setLocalDateRead] = useState(book.dateRead)
   const reviewRef = useRef<HTMLTextAreaElement>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
   const hue = titleHue(book.title)
@@ -120,8 +121,13 @@ export function BookDetail({
                 <input
                   type="month"
                   className="month-input"
-                  value={book.dateRead}
-                  onChange={(e) => onUpdateBook(book.id, { dateRead: e.target.value || null })}
+                  value={localDateRead ?? ''}
+                  onChange={(e) => setLocalDateRead(e.target.value || null)}
+                  onBlur={() => {
+                    if (localDateRead !== book.dateRead) {
+                      onUpdateBook(book.id, { dateRead: localDateRead })
+                    }
+                  }}
                 />
               ) : (
                 <span className="detail-date-none">No date set</span>
@@ -130,22 +136,23 @@ export function BookDetail({
                 <input
                   type="checkbox"
                   checked={book.dateRead === null}
-                  onChange={(e) =>
-                    onUpdateBook(book.id, {
-                      dateRead: e.target.checked ? null : new Date().toISOString().slice(0, 7)
-                    })
-                  }
+                  onChange={(e) => {
+                    const val = e.target.checked ? null : new Date().toISOString().slice(0, 7)
+                    setLocalDateRead(val)
+                    onUpdateBook(book.id, { dateRead: val })
+                  }}
                 />
                 No date
               </label>
             </div>
 
+            {book.dateAdded && (
+              <p className="book-detail-meta">
+                Added {new Date(book.dateAdded).toLocaleDateString()}
+              </p>
+            )}
+
             <div className="detail-sidebar-footer">
-              {book.dateAdded && (
-                <p className="book-detail-meta">
-                  Added {new Date(book.dateAdded).toLocaleDateString()}
-                </p>
-              )}
               <button className="detail-delete-btn" onClick={handleDelete}>
                 <Trash2 size={13} />
                 Remove from library
@@ -196,6 +203,7 @@ export function BookDetail({
             </div>
           </div>
         </div>
+
       </div>
     </div>
   )

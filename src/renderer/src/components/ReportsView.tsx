@@ -79,8 +79,8 @@ export function ReportsView({ books, onBookClick }: ReportsViewProps): JSX.Eleme
     return (
       <div className="empty-state">
         <BookOpenCheck size={48} strokeWidth={1.2} />
-        <h2>No reading data yet</h2>
-        <p>Finish reading some books to see your reports</p>
+        <h2>No page-turners yet</h2>
+        <p>Finish a book and your reading timeline appears here</p>
       </div>
     )
   }

@@ -67,12 +67,14 @@ export function Sidebar({ activeFilter, onFilterChange, counts, onAddBook, onOpe
       </nav>
 
       <div className="sidebar-footer">
-        <button className="settings-btn" onClick={onOpenSettings} title="Settings">
-          <Settings size={16} />
-        </button>
-        <button className="settings-btn" onClick={onOpenHelp} title="Keyboard shortcuts (?)">
-          <HelpCircle size={16} />
-        </button>
+        <div className="sidebar-footer-actions">
+          <button className="sidebar-footer-btn" onClick={onOpenSettings} title="Settings">
+            <Settings size={15} />
+          </button>
+          <button className="sidebar-footer-btn" onClick={onOpenHelp} title="Keyboard shortcuts (?)">
+            <HelpCircle size={15} />
+          </button>
+        </div>
         <span className="app-version">v0.2.0</span>
       </div>
     </aside>

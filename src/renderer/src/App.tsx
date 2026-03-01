@@ -46,7 +46,9 @@ function App(): JSX.Element {
   const [sidebarVisible, setSidebarVisible] = useState(true)
   const [sortBy, setSortBy] = useState<'date-added' | 'title' | 'author' | 'date-read'>('date-added')
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    return (localStorage.getItem('bookworm-theme') as 'dark' | 'light') || 'dark'
+    const stored = localStorage.getItem('bookworm-theme') as 'dark' | 'light' | null
+    if (stored) return stored
+    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
   })
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     return (localStorage.getItem('bookworm-view') as ViewMode) || 'list'
@@ -254,7 +256,6 @@ function App(): JSX.Element {
 
   useKeyboardShortcuts({
     onAddBook: () => {
-      console.log(`[keys] onAddBook called — anyModal=${anyModal} (add=${showAddModal} detail=${showDetail} settings=${showSettings} help=${showHelp})`)
       if (!anyModal) setShowAddModal(true)
     },
     onToggleSidebar: () => {
@@ -326,11 +327,9 @@ function App(): JSX.Element {
       if (!anyModal) setShowHelp(true)
     },
     onSortBy: (sort) => {
-      console.log(`[keys] onSortBy(${sort}) called — anyModal=${anyModal}`)
       if (!anyModal) setSortBy((prev) => prev === sort ? 'date-added' : sort as 'title' | 'author' | 'date-read')
     },
     onEscape: () => {
-      console.log(`[keys] onEscape — showHelp=${showHelp} showSettings=${showSettings} showAddModal=${showAddModal} showDetail=${showDetail} selectedBookIndex=${selectedBookIndex}`)
       if (showHelp) {
         setShowHelp(false)
       } else if (showSettings) {
@@ -364,7 +363,6 @@ function App(): JSX.Element {
   // Safety net: if showDetail is true but there's no book to show, auto-recover
   useEffect(() => {
     if (showDetail && !detailBook && !selectedBook) {
-      console.log('[keys] auto-recovering: showDetail=true but no book to display')
       setShowDetail(false)
       setDetailBookId(null)
     }

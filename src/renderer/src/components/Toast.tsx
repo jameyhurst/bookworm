@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Check, Trash2 } from 'lucide-react'
+import { Check, Trash2, AlertCircle } from 'lucide-react'
 
 export interface ToastItem {
   id: number
   message: string
-  type: 'added' | 'deleted'
+  type: 'added' | 'deleted' | 'error'
 }
 
 interface ToastProps {
@@ -29,7 +29,7 @@ function ToastEntry({ toast, onDismiss }: { toast: ToastItem; onDismiss: (id: nu
     setTimeout(() => onDismiss(toast.id), 300)
   }
 
-  const Icon = toast.type === 'added' ? Check : Trash2
+  const Icon = toast.type === 'added' ? Check : toast.type === 'error' ? AlertCircle : Trash2
 
   return (
     <div className={`toast${exiting ? ' toast-exiting' : ''}`} onClick={handleClick}>

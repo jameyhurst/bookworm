@@ -4,6 +4,7 @@ import { StarRating } from './StarRating'
 
 interface ReportsViewProps {
   books: Book[]
+  onBookClick: (bookId: number) => void
 }
 
 interface MonthGroup {
@@ -21,6 +22,14 @@ const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
 ]
+
+function titleHue(title: string): number {
+  let hash = 0
+  for (let i = 0; i < title.length; i++) {
+    hash = title.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return Math.abs(hash) % 360
+}
 
 function groupByYear(books: Book[]): YearGroup[] {
   const finished = books.filter((b) => b.status === 'finished')
@@ -63,7 +72,7 @@ function groupByYear(books: Book[]): YearGroup[] {
   return years
 }
 
-export function ReportsView({ books }: ReportsViewProps): JSX.Element {
+export function ReportsView({ books, onBookClick }: ReportsViewProps): JSX.Element {
   const finished = books.filter((b) => b.status === 'finished')
 
   if (finished.length === 0) {
@@ -76,9 +85,16 @@ export function ReportsView({ books }: ReportsViewProps): JSX.Element {
     )
   }
 
-  const avgRating = finished.filter((b) => b.rating !== null).length > 0
-    ? (finished.reduce((sum, b) => sum + (b.rating || 0), 0) / finished.filter((b) => b.rating !== null).length).toFixed(1)
+  const ratedBooks = finished.filter((b) => b.rating !== null)
+  const avgRating = ratedBooks.length > 0
+    ? (ratedBooks.reduce((sum, b) => sum + b.rating!, 0) / ratedBooks.length).toFixed(1)
     : null
+
+  const tagCounts = finished.flatMap((b) => b.tags).reduce((acc, tag) => {
+    acc[tag] = (acc[tag] || 0) + 1
+    return acc
+  }, {} as Record<string, number>)
+  const topTag = Object.entries(tagCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
 
   const yearGroups = groupByYear(books)
 
@@ -97,26 +113,70 @@ export function ReportsView({ books }: ReportsViewProps): JSX.Element {
             <span className="reports-stat-label">Avg Rating</span>
           </div>
         )}
+        {topTag && (
+          <div className="reports-stat">
+            <span className="reports-stat-value reports-stat-tag">{topTag}</span>
+            <span className="reports-stat-label">Top Mood</span>
+          </div>
+        )}
       </div>
 
       {yearGroups.map((yearGroup) => (
         <div key={yearGroup.year} className="reports-year">
-          <h3 className="reports-year-title">{yearGroup.year}</h3>
+          <div className="reports-year-header">
+            <h3 className="reports-year-title">{yearGroup.year}</h3>
+            <span className="reports-year-count">
+              {yearGroup.months.reduce((sum, m) => sum + m.books.length, 0)} books
+            </span>
+          </div>
           {yearGroup.months.map((monthGroup) => (
             <div key={monthGroup.month} className="reports-month">
-              <h4 className="reports-month-title">{monthGroup.label}</h4>
+              <h4 className="reports-month-title">
+                {monthGroup.label}
+                <span className="reports-month-count">{monthGroup.books.length}</span>
+              </h4>
               <div className="reports-book-list">
-                {monthGroup.books.map((book) => (
-                  <div key={book.id} className="reports-book-row">
-                    <div className="reports-book-info">
-                      <span className="reports-book-title">{book.title}</span>
-                      <span className="reports-book-author">{book.author}</span>
+                {monthGroup.books.map((book) => {
+                  const hue = titleHue(book.title)
+                  return (
+                    <div
+                      key={book.id}
+                      className="reports-book-row"
+                      onClick={() => onBookClick(book.id)}
+                    >
+                      {book.coverId ? (
+                        <img
+                          className="reports-book-cover"
+                          src={`covers://local/${book.coverId}.jpg`}
+                          alt=""
+                        />
+                      ) : (
+                        <div
+                          className="reports-book-cover reports-book-cover--fallback"
+                          style={{
+                            background: `linear-gradient(145deg, hsl(${hue}, 30%, 22%) 0%, hsl(${(hue + 40) % 360}, 25%, 16%) 100%)`
+                          }}
+                        />
+                      )}
+                      <div className="reports-book-info">
+                        <span className="reports-book-title">{book.title}</span>
+                        <span className="reports-book-author">by {book.author}</span>
+                        {book.review?.trim() && (
+                          <span className="reports-book-review">
+                            {book.review.trim().length > 120
+                              ? `${book.review.trim().slice(0, 120)}…`
+                              : book.review.trim()}
+                          </span>
+                        )}
+                      </div>
+                      {book.rating !== null && (
+                        <div className="reports-book-rating">
+                          <StarRating rating={book.rating} size={13} />
+                        </div>
+                      )}
                     </div>
-                    {book.rating !== null && (
-                      <StarRating rating={book.rating} size={14} />
-                    )}
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           ))}

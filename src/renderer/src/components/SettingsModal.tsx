@@ -33,7 +33,7 @@ export function SettingsModal({ onClose, theme, onToggleTheme, onLibraryImported
     try {
       const result = await window.api.exportLibrary()
       if (result.error) {
-        addToast(`Export failed: ${result.error}`, 'deleted')
+        addToast(`Export failed: ${result.error}`, 'error')
       } else if (result.success) {
         addToast(`Exported ${result.bookCount} book${result.bookCount === 1 ? '' : 's'}`, 'added')
       }
@@ -47,7 +47,7 @@ export function SettingsModal({ onClose, theme, onToggleTheme, onLibraryImported
     try {
       const result = await window.api.importLibrary()
       if (result.error) {
-        addToast(`Import failed: ${result.error}`, 'deleted')
+        addToast(`Import failed: ${result.error}`, 'error')
       } else if (result.success) {
         addToast(`Imported ${result.bookCount} book${result.bookCount === 1 ? '' : 's'}`, 'added')
         onLibraryImported()

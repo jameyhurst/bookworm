@@ -73,15 +73,25 @@ export function BookList({ books, activeFilter, selectedBookIndex, viewMode, sor
     )
   }
 
+  const sectionCounts = new Map<string, number>()
+  books.forEach((book) => {
+    const section = getSectionKey(book, sortBy)
+    if (section !== null) sectionCounts.set(section, (sectionCounts.get(section) ?? 0) + 1)
+  })
+
   const elements: JSX.Element[] = []
   let lastSection: string | null = null
 
   books.forEach((book, i) => {
     const section = getSectionKey(book, sortBy)
     if (section !== null && section !== lastSection) {
+      const count = sectionCounts.get(section) ?? 0
       elements.push(
         <div key={`section-${section}`} className="book-list-section-header">
-          {section}
+          <div className="section-header-bar" />
+          <span className="section-header-label">{section}</span>
+          <span className="section-header-count">{count}</span>
+          <div className="section-header-rule" />
         </div>
       )
       lastSection = section

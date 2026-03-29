@@ -520,20 +520,49 @@ body {
 
 /* ─── Section Headers ─── */
 .book-list-section-header {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 16px 0 4px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 0 6px;
   grid-column: 1 / -1;
 }
 
 .book-list-section-header:first-child {
-  padding-top: 0;
+  padding-top: 4px;
+}
+
+.section-header-bar {
+  width: 3px;
+  height: 20px;
+  background: var(--warning);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.section-header-label {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.section-header-count {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.06em;
+  background: rgba(72, 161, 17, 0.1);
+  border: 1px solid rgba(72, 161, 17, 0.22);
+  border-radius: 10px;
+  padding: 1px 7px;
+}
+
+.section-header-rule {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
 }
 
 /* ─── Book Card ─── */

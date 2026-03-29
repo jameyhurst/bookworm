@@ -1,10 +1,10 @@
-import { Library, BookOpen, Sparkles, CheckCircle, Plus, Compass, BarChart3, Settings, HelpCircle, type LucideIcon } from 'lucide-react'
+import { Library, BookOpen, Sparkles, CheckCircle, Plus, Compass, BarChart3, Tags, Settings, HelpCircle, type LucideIcon } from 'lucide-react'
 import { BookStatus } from '../App'
 import appIcon from '../../../../resources/icon-transparent.png'
 
 interface SidebarProps {
-  activeFilter: BookStatus | 'all' | 'discover' | 'reports'
-  onFilterChange: (filter: BookStatus | 'all' | 'discover' | 'reports') => void
+  activeFilter: BookStatus | 'all' | 'discover' | 'reports' | 'explore'
+  onFilterChange: (filter: BookStatus | 'all' | 'discover' | 'reports' | 'explore') => void
   counts: Record<BookStatus | 'all', number>
   onAddBook: () => void
   onOpenSettings: () => void
@@ -50,6 +50,13 @@ export function Sidebar({ activeFilter, onFilterChange, counts, onAddBook, onOpe
 
         <div className="sidebar-divider" />
 
+        <button
+          className={`nav-item ${activeFilter === 'explore' ? 'active' : ''}`}
+          onClick={() => onFilterChange('explore')}
+        >
+          <Tags size={16} className="nav-icon" />
+          <span className="nav-label">Explore</span>
+        </button>
         <button
           className={`nav-item ${activeFilter === 'discover' ? 'active' : ''}`}
           onClick={() => onFilterChange('discover')}

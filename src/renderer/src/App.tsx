@@ -5,6 +5,7 @@ import { BookDetail } from './components/BookDetail'
 import { AddBookModal, type AddBookMeta } from './components/AddBookModal'
 import { DiscoverView } from './components/DiscoverView'
 import { ReportsView } from './components/ReportsView'
+import { ExploreView } from './components/ExploreView'
 import { SettingsModal } from './components/SettingsModal'
 import { HelpModal } from './components/HelpModal'
 import { ViewToggle, type ViewMode } from './components/ViewToggle'
@@ -34,7 +35,7 @@ export interface Book {
 
 function App(): JSX.Element {
   const [books, setBooks] = useState<Book[]>([])
-  const [activeFilter, setActiveFilter] = useState<BookStatus | 'all' | 'discover' | 'reports'>('all')
+  const [activeFilter, setActiveFilter] = useState<BookStatus | 'all' | 'discover' | 'reports' | 'explore'>('all')
   const [showAddModal, setShowAddModal] = useState(false)
   const [addModalKey, setAddModalKey] = useState(0)
   const returnToAddRef = useRef(false)
@@ -244,10 +245,10 @@ function App(): JSX.Element {
       if (!anyModal) setSidebarVisible((v) => !v)
     },
     onGoToFilter: (filter) => {
-      if (!anyModal) setActiveFilter(filter as BookStatus | 'all' | 'discover' | 'reports')
+      if (!anyModal) setActiveFilter(filter as BookStatus | 'all' | 'discover' | 'reports' | 'explore')
     },
     onNavigate: (direction) => {
-      if (anyModal || searchedBooks.length === 0 || activeFilter === 'discover' || activeFilter === 'reports') return
+      if (anyModal || searchedBooks.length === 0 || activeFilter === 'discover' || activeFilter === 'reports' || activeFilter === 'explore') return
       if (viewMode === 'list' && (direction === 'left' || direction === 'right')) return
 
       setSelectedBookIndex((prev) => {
@@ -375,7 +376,7 @@ function App(): JSX.Element {
                 <PanelLeftOpen size={18} />
               </button>
             )}
-            {showSearch && activeFilter !== 'discover' && activeFilter !== 'reports' && (
+            {showSearch && activeFilter !== 'discover' && activeFilter !== 'reports' && activeFilter !== 'explore' && (
               <div className="toolbar-search">
                 <Search size={14} className="toolbar-search-icon" />
                 <input
@@ -402,7 +403,7 @@ function App(): JSX.Element {
             )}
           </div>
           <div className="main-toolbar-right">
-            {activeFilter !== 'discover' && activeFilter !== 'reports' && (
+            {activeFilter !== 'discover' && activeFilter !== 'reports' && activeFilter !== 'explore' && (
               <>
                 <SortToggle mode={sortBy} onChange={setSortBy} />
                 <ViewToggle mode={viewMode} onChange={setViewMode} />
@@ -427,6 +428,18 @@ function App(): JSX.Element {
                 setDetailFocus('default')
                 setShowDetail(true)
               }}
+            />
+          ) : activeFilter === 'explore' ? (
+            <ExploreView
+              books={books}
+              viewMode={viewMode}
+              sortBy={sortBy}
+              selectedBookIndex={selectedBookIndex}
+              onOpenBook={handleOpenBook}
+              onUpdateBook={handleUpdateBook}
+              onDelete={handleDeleteBook}
+              onAddBook={() => setShowAddModal(true)}
+              onDiscover={() => setActiveFilter('discover')}
             />
           ) : (
             <BookList

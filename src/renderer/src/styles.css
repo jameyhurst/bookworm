@@ -738,6 +738,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding-top: 48px;
   z-index: 100;
   backdrop-filter: blur(4px);
   outline: none;
@@ -1684,7 +1685,11 @@ body {
 
 /* ─── Discover View ─── */
 .discover-view {
-  max-width: 800px;
+  max-width: 900px;
+}
+
+.sidebar-hidden .discover-view {
+  max-width: 100%;
 }
 
 .discover-header {
@@ -1982,7 +1987,11 @@ body {
 
 /* ─── Reports View ─── */
 .reports-view {
-  max-width: 740px;
+  max-width: 800px;
+}
+
+.sidebar-hidden .reports-view {
+  max-width: 100%;
 }
 
 .reports-title {

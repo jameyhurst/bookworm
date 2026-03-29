@@ -95,7 +95,8 @@ export function useKeyboardShortcuts(callbacks: ShortcutCallbacks): {
             c: 'reading',
             r: 'finished',
             d: 'discover',
-            p: 'reports'
+            p: 'reports',
+            e: 'explore'
           }
           if (chordMap[key]) cbRef.current.onGoToFilter(chordMap[key])
         } else if (pending === 'r') {

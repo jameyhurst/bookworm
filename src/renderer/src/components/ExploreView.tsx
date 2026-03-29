@@ -82,6 +82,7 @@ export function ExploreView({
         onDelete={onDelete}
         onAddBook={onAddBook}
         onDiscover={onDiscover}
+        onTagClick={(tag) => setActiveTag(tag)}
       />
     </div>
   )

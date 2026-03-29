@@ -55,6 +55,7 @@ export function HelpModal({ onClose }: HelpModalProps): JSX.Element {
             <h3 className="help-section-title">Views</h3>
             <ShortcutRow label="Toggle list / grid" keys={['v']} />
             <ShortcutRow label="Toggle sidebar" keys={['b']} />
+            <ShortcutRow label="Toggle appearance" keys={['t']} />
             <ShortcutRow label="Discover" keys={['d']} />
           </div>
 

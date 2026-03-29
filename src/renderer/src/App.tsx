@@ -311,6 +311,11 @@ function App(): JSX.Element {
     onSortBy: (sort) => {
       if (!anyModal) setSortBy((prev) => prev === sort ? 'date-added' : sort as 'title' | 'author' | 'date-read')
     },
+    onToggleTheme: () => {
+      const next = theme === 'dark' ? 'light' : 'dark'
+      toggleTheme()
+      addToast(`Switched to ${next} mode`, 'success')
+    },
     onEscape: () => {
       if (showHelp) {
         setShowHelp(false)

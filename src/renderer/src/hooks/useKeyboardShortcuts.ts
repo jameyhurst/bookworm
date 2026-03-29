@@ -14,6 +14,7 @@ export interface ShortcutCallbacks {
   onShowHelp: () => void
   onDeleteSelected: () => void
   onSortBy: (sort: string) => void
+  onToggleTheme: () => void
 }
 
 type ChordKey = 'g' | 'r' | 'm' | 's' | null
@@ -144,6 +145,10 @@ export function useKeyboardShortcuts(callbacks: ShortcutCallbacks): {
         case 'v':
           e.preventDefault()
           cbRef.current.onToggleView()
+          break
+        case 't':
+          e.preventDefault()
+          cbRef.current.onToggleTheme()
           break
         case 'g':
         case 'r':

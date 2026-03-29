@@ -18,10 +18,11 @@ export function TagPills({ tags, selectedTags, interactive, onToggle, onTagClick
             key={tag}
             type="button"
             className={`tag-pill${isSelected ? ' selected' : ''}`}
-            onClick={() => {
+            onClick={(e) => {
               if (interactive) {
                 onToggle?.(tag)
               } else {
+                e.stopPropagation()
                 onTagClick?.(tag)
               }
             }}

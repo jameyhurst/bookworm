@@ -462,7 +462,7 @@ function App(): JSX.Element {
           key={addModalKey}
           onAdd={(book, meta) => handleAddBook(book, meta, { returnToAdd: true })}
           onClose={() => setShowAddModal(false)}
-          defaultStatus={activeFilter !== 'all' && activeFilter !== 'discover' && activeFilter !== 'reports' ? activeFilter : undefined}
+          defaultStatus={activeFilter !== 'all' && activeFilter !== 'discover' && activeFilter !== 'reports' && activeFilter !== 'explore' ? activeFilter : undefined}
           existingBooks={books}
         />
       )}

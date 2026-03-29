@@ -279,25 +279,23 @@ function App(): JSX.Element {
     },
     onRateSelected: (rating) => {
       if (showAddModal || showSettings || showHelp) return
-      if (selectedBookIndex !== null && searchedBooks[selectedBookIndex]) {
-        handleUpdateBook(searchedBooks[selectedBookIndex].id, { rating })
-      }
+      const target = detailBook ?? selectedBook
+      if (target) handleUpdateBook(target.id, { rating })
     },
     onSetStatusSelected: (status) => {
       if (showAddModal || showSettings || showHelp) return
-      if (selectedBookIndex !== null && searchedBooks[selectedBookIndex]) {
-        handleUpdateBook(searchedBooks[selectedBookIndex].id, { status: status as BookStatus })
-      }
+      const target = detailBook ?? selectedBook
+      if (target) handleUpdateBook(target.id, { status: status as BookStatus })
     },
     onDeleteSelected: () => {
       if (showAddModal || showSettings || showHelp) return
-      if (selectedBookIndex !== null && searchedBooks[selectedBookIndex]) {
-        handleDeleteBook(searchedBooks[selectedBookIndex].id)
-      }
+      const target = detailBook ?? selectedBook
+      if (target) handleDeleteBook(target.id)
     },
     onEditReview: () => {
       if (showAddModal || showSettings || showHelp) return
-      if (selectedBookIndex !== null && searchedBooks[selectedBookIndex]) {
+      const target = detailBook ?? selectedBook
+      if (target) {
         setDetailFocus('review')
         setShowDetail(true)
       }

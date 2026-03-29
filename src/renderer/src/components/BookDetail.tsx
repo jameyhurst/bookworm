@@ -172,10 +172,10 @@ export function BookDetail({
                   className="detail-summary"
                   dangerouslySetInnerHTML={{ __html: book.summary }}
                   onClick={(e) => {
-                    const target = e.target as HTMLElement
-                    if (target.tagName === 'A') {
+                    const anchor = (e.target as HTMLElement).closest('a')
+                    if (anchor) {
                       e.preventDefault()
-                      const href = (target as HTMLAnchorElement).getAttribute('href')
+                      const href = anchor.getAttribute('href')
                       if (href) window.api.openExternal(href)
                     }
                   }}

@@ -2,6 +2,7 @@ import { Trash2 } from 'lucide-react'
 import { Book } from '../App'
 import { StarRating } from './StarRating'
 import { TagPills } from './TagPills'
+import { titleHue } from '../utils'
 import type { ViewMode } from './ViewToggle'
 
 interface BookCardProps {
@@ -18,14 +19,6 @@ const statusLabels = {
   'want-to-read': 'Want to Read',
   reading: 'Currently Reading',
   finished: 'Read'
-}
-
-function titleHue(title: string): number {
-  let hash = 0
-  for (let i = 0; i < title.length; i++) {
-    hash = title.charCodeAt(i) + ((hash << 5) - hash)
-  }
-  return Math.abs(hash) % 360
 }
 
 export function BookCard({ book, isSelected, viewMode, index, onOpen, onDelete }: BookCardProps): JSX.Element {

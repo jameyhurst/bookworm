@@ -1,6 +1,7 @@
 import { BookOpenCheck } from 'lucide-react'
 import { Book } from '../App'
 import { StarRating } from './StarRating'
+import { titleHue } from '../utils'
 
 interface ReportsViewProps {
   books: Book[]
@@ -23,17 +24,7 @@ const MONTH_NAMES = [
   'July', 'August', 'September', 'October', 'November', 'December'
 ]
 
-function titleHue(title: string): number {
-  let hash = 0
-  for (let i = 0; i < title.length; i++) {
-    hash = title.charCodeAt(i) + ((hash << 5) - hash)
-  }
-  return Math.abs(hash) % 360
-}
-
-function groupByYear(books: Book[]): YearGroup[] {
-  const finished = books.filter((b) => b.status === 'finished')
-
+function groupByYear(finished: Book[]): YearGroup[] {
   const yearMap = new Map<string, Map<string, Book[]>>()
 
   for (const book of finished) {
@@ -96,7 +87,7 @@ export function ReportsView({ books, onBookClick }: ReportsViewProps): JSX.Eleme
   }, {} as Record<string, number>)
   const topTag = Object.entries(tagCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
 
-  const yearGroups = groupByYear(books)
+  const yearGroups = groupByYear(finished)
 
   return (
     <div className="reports-view">
@@ -161,13 +152,14 @@ export function ReportsView({ books, onBookClick }: ReportsViewProps): JSX.Eleme
                       <div className="reports-book-info">
                         <span className="reports-book-title">{book.title}</span>
                         <span className="reports-book-author">by {book.author}</span>
-                        {book.review?.trim() && (
-                          <span className="reports-book-review">
-                            {book.review.trim().length > 120
-                              ? `${book.review.trim().slice(0, 120)}…`
-                              : book.review.trim()}
-                          </span>
-                        )}
+                        {(() => {
+                          const trimmed = book.review?.trim()
+                          return trimmed ? (
+                            <span className="reports-book-review">
+                              {trimmed.length > 120 ? `${trimmed.slice(0, 120)}…` : trimmed}
+                            </span>
+                          ) : null
+                        })()}
                       </div>
                       {book.rating !== null && (
                         <div className="reports-book-rating">

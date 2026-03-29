@@ -11,6 +11,7 @@ import { ViewToggle, type ViewMode } from './components/ViewToggle'
 import { SortToggle } from './components/SortToggle'
 import { Toast, type ToastItem } from './components/Toast'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
+import { stripArticle } from './utils'
 import { PanelLeftOpen, Search, X } from 'lucide-react'
 
 export type BookStatus = 'want-to-read' | 'reading' | 'finished'
@@ -59,7 +60,6 @@ function App(): JSX.Element {
   const [showSearch, setShowSearch] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [cachedRecs, setCachedRecs] = useState<any[] | null>(null)
-  const [discoverRefreshHint, setDiscoverRefreshHint] = useState(0)
   const prefetchedRef = useRef(false)
   const skipFilterResetRef = useRef(false)
 
@@ -124,15 +124,15 @@ function App(): JSX.Element {
       ? books
       : books.filter((b) => b.status === activeFilter)
 
-  const stripArticle = (t: string): string =>
-    t.replace(/^(the|a|an|le|la|les|un|une|el|las|los|una|il|lo|gli|i|uno|o|os|as|um|uma)\s+/i, '')
-     .replace(/^l'/i, '')
-
   const filteredBooks =
     sortBy === 'title'
       ? [...filtered].sort((a, b) => stripArticle(a.title).localeCompare(stripArticle(b.title)))
       : sortBy === 'author'
-        ? [...filtered].sort((a, b) => a.author.localeCompare(b.author))
+        ? [...filtered].sort((a, b) => {
+            const lastA = a.author.trim().split(/\s+/).pop() || ''
+            const lastB = b.author.trim().split(/\s+/).pop() || ''
+            return lastA.localeCompare(lastB) || a.author.localeCompare(b.author)
+          })
         : sortBy === 'date-read'
           ? [...filtered].sort((a, b) => {
               const da = a.dateRead || a.dateAdded
@@ -170,47 +170,24 @@ function App(): JSX.Element {
 
   const handleAddBook = async (
     book: Omit<Book, 'id' | 'bookId' | 'dateAdded' | 'dateFinished'>,
-    meta?: AddBookMeta
+    meta?: AddBookMeta,
+    options: { returnToAdd?: boolean } = {}
   ): Promise<string | null> => {
     const result = await window.api.add(book)
     if (result && 'error' in result) return result.error
     await loadBooks()
     addToast(`\u201c${book.title}\u201d added`, 'added')
-    setShowAddModal(false)
-    returnToAddRef.current = true
+
+    if (options.returnToAdd) {
+      setShowAddModal(false)
+      returnToAddRef.current = true
+      setDetailFocus('default')
+    }
+
     setDetailBookId(result.id)
-    setDetailFocus('default')
     setShowDetail(true)
 
     // Background enrichment: download cover + fetch summary, then update
-    if (meta?.openLibraryCoverId || meta?.olKey) {
-      Promise.all([
-        meta.openLibraryCoverId ? window.api.downloadCover(meta.openLibraryCoverId) : null,
-        meta.olKey ? window.api.fetchSummary(meta.olKey) : null
-      ]).then(async ([coverId, summary]) => {
-        const updates: Partial<Book> = {}
-        if (coverId) updates.coverId = coverId
-        if (summary) updates.summary = summary
-        if (Object.keys(updates).length > 0) {
-          await handleUpdateBook(result.id, updates)
-        }
-      })
-    }
-
-    return null
-  }
-
-  const handleAddFromDiscover = async (
-    book: Omit<Book, 'id' | 'bookId' | 'dateAdded' | 'dateFinished'>,
-    meta?: AddBookMeta
-  ): Promise<string | null> => {
-    const result = await window.api.add(book)
-    if (result && 'error' in result) return result.error
-    await loadBooks()
-    addToast(`\u201c${book.title}\u201d added`, 'added')
-    setDetailBookId(result.id)
-    setShowDetail(true)
-
     if (meta?.openLibraryCoverId || meta?.olKey) {
       Promise.all([
         meta.openLibraryCoverId ? window.api.downloadCover(meta.openLibraryCoverId) : null,
@@ -251,6 +228,11 @@ function App(): JSX.Element {
     if (detailBookId === id) setDetailBookId(null)
     if (title) addToast(`\u201c${title}\u201d removed`, 'deleted')
   }
+
+  const handleCloseSettings = useCallback(() => {
+    setShowSettings(false)
+    setCachedRecs(null)
+  }, [])
 
   const anyModal = showAddModal || showDetail || showSettings || showHelp
 
@@ -333,8 +315,7 @@ function App(): JSX.Element {
       if (showHelp) {
         setShowHelp(false)
       } else if (showSettings) {
-        setShowSettings(false)
-        setDiscoverRefreshHint((n) => n + 1)
+        handleCloseSettings()
       } else if (showAddModal) {
         setShowAddModal(false)
       } else if (showDetail) {
@@ -430,11 +411,10 @@ function App(): JSX.Element {
           {activeFilter === 'discover' ? (
             <DiscoverView
               onOpenSettings={() => setShowSettings(true)}
-              onAddBook={handleAddFromDiscover}
+              onAddBook={handleAddBook}
               existingBooks={books}
               cachedRecs={cachedRecs}
               onRecsLoaded={setCachedRecs}
-              refreshHint={discoverRefreshHint}
             />
           ) : activeFilter === 'reports' ? (
             <ReportsView
@@ -464,7 +444,7 @@ function App(): JSX.Element {
       {showAddModal && (
         <AddBookModal
           key={addModalKey}
-          onAdd={handleAddBook}
+          onAdd={(book, meta) => handleAddBook(book, meta, { returnToAdd: true })}
           onClose={() => setShowAddModal(false)}
           defaultStatus={activeFilter !== 'all' && activeFilter !== 'discover' && activeFilter !== 'reports' ? activeFilter : undefined}
           existingBooks={books}
@@ -490,7 +470,7 @@ function App(): JSX.Element {
       )}
       {showSettings && (
         <SettingsModal
-          onClose={() => { setShowSettings(false); setDiscoverRefreshHint((n) => n + 1) }}
+          onClose={handleCloseSettings}
           theme={theme}
           onToggleTheme={toggleTheme}
           onLibraryImported={() => { loadBooks(); setCachedRecs(null); prefetchedRef.current = false }}

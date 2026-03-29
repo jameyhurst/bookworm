@@ -97,9 +97,9 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle('books:fetchSummary', (_event, olKey: string) => fetchSummary(olKey))
 
-  ipcMain.handle('shell:openExternal', (_, url: string) => {
+  ipcMain.handle('shell:openExternal', async (_, url: string) => {
     if (url.startsWith('https://') || url.startsWith('http://')) {
-      shell.openExternal(url)
+      await shell.openExternal(url)
     }
   })
 

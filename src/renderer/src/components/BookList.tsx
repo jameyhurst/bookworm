@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { BookOpenCheck, Plus, Compass } from 'lucide-react'
 import { Book, BookStatus } from '../App'
 import { BookCard } from './BookCard'
+import { stripArticle } from '../utils'
 import type { ViewMode } from './ViewToggle'
 
 interface BookListProps {
@@ -22,11 +23,6 @@ const EMPTY_STATES: Record<string, { heading: string; subtitle: string }> = {
   'want-to-read': { heading: 'No wishlist yet', subtitle: 'Find something that catches your eye' },
   reading: { heading: 'Between books?', subtitle: 'Pick up something new \u2014 or revisit an old favorite' },
   finished: { heading: 'No page-turners yet', subtitle: 'Finish a book and it\u2019ll show up here' }
-}
-
-function stripArticle(t: string): string {
-  return t.replace(/^(the|a|an|le|la|les|un|une|el|las|los|una|il|lo|gli|i|uno|o|os|as|um|uma)\s+/i, '')
-    .replace(/^l'/i, '')
 }
 
 function getSectionKey(book: Book, sortBy: string): string | null {

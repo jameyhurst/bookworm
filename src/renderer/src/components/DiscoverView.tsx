@@ -15,7 +15,6 @@ interface DiscoverViewProps {
   existingBooks: Book[]
   cachedRecs?: Recommendation[] | null
   onRecsLoaded?: (recs: Recommendation[]) => void
-  refreshHint?: number
 }
 
 function sanitizeError(msg: string): string {
@@ -68,7 +67,7 @@ const MOOD_CHIPS = [
   { label: 'Short Reads', prompt: 'short books under 250 pages' }
 ]
 
-export function DiscoverView({ onOpenSettings, onAddBook, existingBooks, cachedRecs, onRecsLoaded, refreshHint }: DiscoverViewProps): JSX.Element {
+export function DiscoverView({ onOpenSettings, onAddBook, existingBooks, cachedRecs, onRecsLoaded }: DiscoverViewProps): JSX.Element {
   const [recommendations, setRecommendations] = useState<Recommendation[]>(cachedRecs || [])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -82,10 +81,10 @@ export function DiscoverView({ onOpenSettings, onAddBook, existingBooks, cachedR
   const isInLibrary = useCallback((title: string, author: string): boolean => {
     const normTitle = title.trim().toLowerCase()
     const normAuthor = author.trim().toLowerCase()
-    return existingBooks.some((b) => {
+    return booksRef.current.some((b) => {
       return b.title.trim().toLowerCase() === normTitle && b.author.trim().toLowerCase() === normAuthor
     })
-  }, [existingBooks])
+  }, [])
 
   const fetchRecommendations = useCallback(async (userPrompt?: string): Promise<void> => {
     setLoading(true)
@@ -93,14 +92,7 @@ export function DiscoverView({ onOpenSettings, onAddBook, existingBooks, cachedR
     setActivePrompt(userPrompt)
     try {
       const recs = await window.api.getRecommendations(userPrompt)
-      // Filter out books already in the user's library (safety net for prompt instruction)
-      const fresh = recs.filter((r) => {
-        const t = r.title.trim().toLowerCase()
-        const a = r.author.trim().toLowerCase()
-        return !booksRef.current.some((b) =>
-          b.title.trim().toLowerCase() === t && b.author.trim().toLowerCase() === a
-        )
-      })
+      const fresh = recs.filter((r) => !isInLibrary(r.title, r.author))
       setRecommendations(fresh)
       setHasLoaded(true)
       onRecsLoaded?.(fresh)
@@ -109,12 +101,12 @@ export function DiscoverView({ onOpenSettings, onAddBook, existingBooks, cachedR
     } finally {
       setLoading(false)
     }
-  }, [onRecsLoaded])
+  }, [onRecsLoaded, isInLibrary])
 
   useEffect(() => {
     if (cachedRecs?.length) return
     fetchRecommendations()
-  }, [fetchRecommendations, cachedRecs, refreshHint])
+  }, [fetchRecommendations, cachedRecs])
 
   const handleAddFromRec = async (rec: Recommendation, index: number): Promise<void> => {
     if (addingRec !== null) return

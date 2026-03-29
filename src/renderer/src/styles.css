@@ -773,9 +773,9 @@ body {
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  padding: 48px 16px 32px;
+  padding: 16px;
   z-index: 100;
   backdrop-filter: blur(4px);
   outline: none;
@@ -1253,10 +1253,13 @@ body {
 .book-detail-modal {
   width: 90vw;
   max-width: min(900px, calc(100vw - 32px));
-  max-height: calc(100vh - 64px);
+  height: calc(100vh - 96px);
+  max-height: calc(100vh - 96px);
   overflow: hidden;
   border: none;
   position: relative;
+  display: flex;
+  flex-direction: column;
   animation: detailEnter 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -1296,7 +1299,8 @@ body {
 
 .book-detail-content {
   display: flex;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
 }
 
 /* ─── Sidebar ─── */

@@ -25,6 +25,7 @@ export function BookDetail({
   const [review, setReview] = useState(book.review || '')
   const [localDateRead, setLocalDateRead] = useState(book.dateRead)
   const reviewRef = useRef<HTMLTextAreaElement>(null)
+  const monthInputRef = useRef<HTMLInputElement>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
   const hue = titleHue(book.title)
   const fallbackBg = `linear-gradient(145deg, hsl(${hue}, 30%, 22%) 0%, hsl(${(hue + 40) % 360}, 25%, 16%) 100%)`
@@ -47,6 +48,22 @@ export function BookDetail({
           onUpdateBook(book.id, { review: newReview })
         }
         onClose()
+        return
+      }
+
+      if (e.key === 'd' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const tag = (e.target as HTMLElement).tagName
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+        e.preventDefault()
+        if (localDateRead === null) {
+          const month = new Date().toISOString().slice(0, 7)
+          setLocalDateRead(month)
+          onUpdateBook(book.id, { dateRead: month })
+          setTimeout(() => monthInputRef.current?.focus(), 0)
+        } else {
+          setLocalDateRead(null)
+          onUpdateBook(book.id, { dateRead: null })
+        }
       }
     }
     document.addEventListener('keydown', handleKeyDown)
@@ -110,11 +127,12 @@ export function BookDetail({
 
             <div className="detail-sidebar-group">
               <label className="detail-label">Date Read</label>
-              {book.dateRead !== null ? (
+              {localDateRead !== null ? (
                 <input
+                  ref={monthInputRef}
                   type="month"
                   className="month-input"
-                  value={localDateRead ?? ''}
+                  value={localDateRead}
                   onChange={(e) => setLocalDateRead(e.target.value || null)}
                   onBlur={() => {
                     if (localDateRead !== book.dateRead) {
@@ -128,7 +146,7 @@ export function BookDetail({
               <label className="skip-date-toggle">
                 <input
                   type="checkbox"
-                  checked={book.dateRead === null}
+                  checked={localDateRead === null}
                   onChange={(e) => {
                     const val = e.target.checked ? null : new Date().toISOString().slice(0, 7)
                     setLocalDateRead(val)

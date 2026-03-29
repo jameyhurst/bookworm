@@ -65,6 +65,7 @@ export function HelpModal({ onClose }: HelpModalProps): JSX.Element {
             <ShortcutRow label="Find book" keys={['⌘', 'F']} />
             <ShortcutRow label="Save book" keys={['⌘', 'Enter']} />
             <ShortcutRow label="Edit review" keys={['e']} />
+            <ShortcutRow label="Toggle date read" keys={['d']} />
             <ShortcutRow label="Delete selected" keys={['⌘', '⌫']} />
           </div>
 

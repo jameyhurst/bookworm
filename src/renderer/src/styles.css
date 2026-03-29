@@ -738,7 +738,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding-top: 48px;
+  padding: 48px 16px 16px;
   z-index: 100;
   backdrop-filter: blur(4px);
   outline: none;
@@ -749,6 +749,7 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   width: 440px;
+  max-width: calc(100vw - 32px);
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
@@ -1213,8 +1214,8 @@ body {
 /* ─── Book Detail Modal ─── */
 .book-detail-modal {
   width: 90vw;
-  max-width: 900px;
-  max-height: 95vh;
+  max-width: min(900px, calc(100vw - 32px));
+  max-height: calc(100vh - 64px);
   overflow: hidden;
   border: none;
   position: relative;
@@ -1258,7 +1259,6 @@ body {
 .book-detail-content {
   display: flex;
   height: 100%;
-  max-height: 95vh;
 }
 
 /* ─── Sidebar ─── */

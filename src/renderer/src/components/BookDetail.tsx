@@ -5,6 +5,7 @@ import { StatusSelector } from './StatusSelector'
 import { StarRating } from './StarRating'
 import { TagPills } from './TagPills'
 import { MOOD_TAGS } from '../constants'
+import { titleHue } from '../utils'
 
 interface BookDetailProps {
   book: Book
@@ -12,14 +13,6 @@ interface BookDetailProps {
   onUpdateBook: (id: number, updates: Partial<Book>) => void
   onDelete: (id: number) => void
   onClose: () => void
-}
-
-function titleHue(title: string): number {
-  let hash = 0
-  for (let i = 0; i < title.length; i++) {
-    hash = title.charCodeAt(i) + ((hash << 5) - hash)
-  }
-  return Math.abs(hash) % 360
 }
 
 export function BookDetail({
@@ -175,7 +168,18 @@ export function BookDetail({
 
             {book.summary && (
               <div className="detail-section">
-                <p className="detail-summary">{book.summary}</p>
+                <div
+                  className="detail-summary"
+                  dangerouslySetInnerHTML={{ __html: book.summary }}
+                  onClick={(e) => {
+                    const target = e.target as HTMLElement
+                    if (target.tagName === 'A') {
+                      e.preventDefault()
+                      const href = (target as HTMLAnchorElement).href
+                      if (href) window.api.openExternal(href)
+                    }
+                  }}
+                />
               </div>
             )}
 

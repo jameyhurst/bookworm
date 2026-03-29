@@ -14,6 +14,7 @@ export interface BookAPI {
   syncTheme: (theme: string) => Promise<void>
   exportLibrary: () => Promise<{ success: boolean; bookCount?: number; error?: string }>
   importLibrary: () => Promise<{ success: boolean; bookCount?: number; error?: string }>
+  openExternal: (url: string) => Promise<void>
 }
 
 const api: BookAPI = {
@@ -29,7 +30,8 @@ const api: BookAPI = {
   getRecommendations: (userPrompt?) => ipcRenderer.invoke('discover:getRecommendations', userPrompt),
   syncTheme: (theme) => ipcRenderer.invoke('theme:sync', theme),
   exportLibrary: () => ipcRenderer.invoke('library:export'),
-  importLibrary: () => ipcRenderer.invoke('library:import')
+  importLibrary: () => ipcRenderer.invoke('library:import'),
+  openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url)
 }
 
 contextBridge.exposeInMainWorld('api', api)

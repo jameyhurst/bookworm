@@ -1427,6 +1427,15 @@ body {
   line-height: 1.65;
 }
 
+.detail-summary a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.detail-summary a:hover {
+  text-decoration: underline;
+}
+
 .detail-section-review .review-textarea {
   background: transparent;
   border-color: var(--border);

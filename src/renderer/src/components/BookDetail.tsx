@@ -175,7 +175,7 @@ export function BookDetail({
                     const target = e.target as HTMLElement
                     if (target.tagName === 'A') {
                       e.preventDefault()
-                      const href = (target as HTMLAnchorElement).href
+                      const href = (target as HTMLAnchorElement).getAttribute('href')
                       if (href) window.api.openExternal(href)
                     }
                   }}

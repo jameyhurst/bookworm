@@ -397,6 +397,7 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
+  margin-left: 20px;
   -webkit-app-region: no-drag;
 }
 

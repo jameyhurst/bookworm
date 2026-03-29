@@ -16,6 +16,7 @@ interface BookListProps {
   onDelete: (id: number) => void
   onAddBook: () => void
   onDiscover: () => void
+  onTagClick?: (tag: string) => void
 }
 
 const EMPTY_STATES: Record<string, { heading: string; subtitle: string }> = {
@@ -43,7 +44,7 @@ function getSectionKey(book: Book, sortBy: string): string | null {
   return null
 }
 
-export function BookList({ books, activeFilter, selectedBookIndex, viewMode, sortBy, onOpenBook, onUpdateBook, onDelete, onAddBook, onDiscover }: BookListProps): JSX.Element {
+export function BookList({ books, activeFilter, selectedBookIndex, viewMode, sortBy, onOpenBook, onUpdateBook, onDelete, onAddBook, onDiscover, onTagClick }: BookListProps): JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -106,6 +107,7 @@ export function BookList({ books, activeFilter, selectedBookIndex, viewMode, sor
         onOpen={() => onOpenBook(i)}
         onUpdateBook={onUpdateBook}
         onDelete={onDelete}
+        onTagClick={onTagClick}
       />
     )
   })

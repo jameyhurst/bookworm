@@ -9,6 +9,7 @@ interface ExploreViewProps {
   viewMode: ViewMode
   sortBy: 'date-added' | 'title' | 'author' | 'date-read'
   selectedBookIndex: number | null
+  initialTag?: string | null
   onOpenBook: (index: number) => void
   onUpdateBook: (id: number, updates: Partial<Book>) => void
   onDelete: (id: number) => void
@@ -21,13 +22,14 @@ export function ExploreView({
   viewMode,
   sortBy,
   selectedBookIndex,
+  initialTag,
   onOpenBook,
   onUpdateBook,
   onDelete,
   onAddBook,
   onDiscover
 }: ExploreViewProps): JSX.Element {
-  const [activeTag, setActiveTag] = useState<string | null>(null)
+  const [activeTag, setActiveTag] = useState<string | null>(initialTag ?? null)
 
   // Compute tag → count map, sorted descending by count
   const tagCounts = new Map<string, number>()

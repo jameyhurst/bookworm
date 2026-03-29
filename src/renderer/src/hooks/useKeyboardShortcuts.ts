@@ -59,12 +59,11 @@ export function useKeyboardShortcuts(callbacks: ShortcutCallbacks): {
           clearChord()
           return
         }
-        // If focus is on an input, blur it first so shortcuts resume
+        // Blur any focused input, then always fire onEscape (closes modal / search in one press)
         const activeEl = document.activeElement as HTMLElement
         const activeTag = activeEl?.tagName
         if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') {
           activeEl.blur()
-          return
         }
         cbRef.current.onEscape()
         return

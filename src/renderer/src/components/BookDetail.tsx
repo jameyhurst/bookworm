@@ -133,37 +133,39 @@ export function BookDetail({
               />
             </div>
 
-            <div className="detail-sidebar-group">
-              <label className="detail-label">Date Read</label>
-              {localDateRead !== null ? (
-                <input
-                  ref={monthInputRef}
-                  type="month"
-                  className="month-input"
-                  value={localDateRead}
-                  onChange={(e) => setLocalDateRead(e.target.value || null)}
-                  onBlur={() => {
-                    if (localDateRead !== book.dateRead) {
-                      onUpdateBook(book.id, { dateRead: localDateRead })
-                    }
-                  }}
-                />
-              ) : (
-                <span className="detail-date-none">No date set</span>
-              )}
-              <label className="skip-date-toggle">
-                <input
-                  type="checkbox"
-                  checked={localDateRead === null}
-                  onChange={(e) => {
-                    const val = e.target.checked ? null : new Date().toISOString().slice(0, 7)
-                    setLocalDateRead(val)
-                    onUpdateBook(book.id, { dateRead: val })
-                  }}
-                />
-                No date
-              </label>
-            </div>
+            {book.status !== 'want-to-read' && (
+              <div className="detail-sidebar-group">
+                <label className="detail-label">Date Read</label>
+                {localDateRead !== null ? (
+                  <input
+                    ref={monthInputRef}
+                    type="month"
+                    className="month-input"
+                    value={localDateRead}
+                    onChange={(e) => setLocalDateRead(e.target.value || null)}
+                    onBlur={() => {
+                      if (localDateRead !== book.dateRead) {
+                        onUpdateBook(book.id, { dateRead: localDateRead })
+                      }
+                    }}
+                  />
+                ) : (
+                  <span className="detail-date-none">No date set</span>
+                )}
+                <label className="skip-date-toggle">
+                  <input
+                    type="checkbox"
+                    checked={localDateRead === null}
+                    onChange={(e) => {
+                      const val = e.target.checked ? null : new Date().toISOString().slice(0, 7)
+                      setLocalDateRead(val)
+                      onUpdateBook(book.id, { dateRead: val })
+                    }}
+                  />
+                  No date
+                </label>
+              </div>
+            )}
 
             {book.dateAdded && (
               <p className="book-detail-meta">

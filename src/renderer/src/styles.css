@@ -385,7 +385,14 @@ body {
   padding-left: 80px;
 }
 
-.main-toolbar-left,
+.main-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  -webkit-app-region: no-drag;
+}
+
 .main-toolbar-right {
   display: flex;
   align-items: center;
@@ -402,7 +409,8 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 4px 8px;
-  min-width: 200px;
+  flex: 1;
+  max-width: 480px;
 }
 
 .toolbar-search-icon {
@@ -765,12 +773,13 @@ body {
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 48px 16px 16px;
+  padding: 48px 16px 32px;
   z-index: 100;
   backdrop-filter: blur(4px);
   outline: none;
+  overflow-y: auto;
 }
 
 .modal {

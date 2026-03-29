@@ -13,6 +13,7 @@ interface BookCardProps {
   onOpen: () => void
   onUpdateBook: (id: number, updates: Partial<Book>) => void
   onDelete: (id: number) => void
+  onTagClick?: (tag: string) => void
 }
 
 const statusLabels = {
@@ -21,7 +22,7 @@ const statusLabels = {
   finished: 'Read'
 }
 
-export function BookCard({ book, isSelected, viewMode, index, onOpen, onDelete }: BookCardProps): JSX.Element {
+export function BookCard({ book, isSelected, viewMode, index, onOpen, onDelete, onTagClick }: BookCardProps): JSX.Element {
   const staggerDelay = Math.min(index * 50, 750)
   const hue = titleHue(book.title)
   const fallbackBg = `linear-gradient(145deg, hsl(${hue}, 30%, 22%) 0%, hsl(${(hue + 40) % 360}, 25%, 16%) 100%)`
@@ -97,7 +98,7 @@ export function BookCard({ book, isSelected, viewMode, index, onOpen, onDelete }
           <StarRating rating={book.rating} size={14} />
         )}
         {book.tags.length > 0 && (
-          <TagPills tags={book.tags} selectedTags={book.tags} interactive={false} />
+          <TagPills tags={book.tags} selectedTags={book.tags} interactive={false} onTagClick={onTagClick} />
         )}
         <span className={`status-badge status-${book.status}`}>
           {statusLabels[book.status]}

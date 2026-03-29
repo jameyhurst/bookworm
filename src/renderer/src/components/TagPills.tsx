@@ -3,9 +3,10 @@ interface TagPillsProps {
   selectedTags: string[]
   interactive: boolean
   onToggle?: (tag: string) => void
+  onTagClick?: (tag: string) => void
 }
 
-export function TagPills({ tags, selectedTags, interactive, onToggle }: TagPillsProps): JSX.Element {
+export function TagPills({ tags, selectedTags, interactive, onToggle, onTagClick }: TagPillsProps): JSX.Element {
   const displayTags = interactive ? tags : selectedTags
 
   return (
@@ -17,8 +18,14 @@ export function TagPills({ tags, selectedTags, interactive, onToggle }: TagPills
             key={tag}
             type="button"
             className={`tag-pill${isSelected ? ' selected' : ''}`}
-            onClick={() => interactive && onToggle?.(tag)}
-            disabled={!interactive}
+            onClick={() => {
+              if (interactive) {
+                onToggle?.(tag)
+              } else {
+                onTagClick?.(tag)
+              }
+            }}
+            disabled={!interactive && !onTagClick}
           >
             {tag}
           </button>

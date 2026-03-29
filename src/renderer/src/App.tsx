@@ -63,6 +63,7 @@ function App(): JSX.Element {
   const [cachedRecs, setCachedRecs] = useState<any[] | null>(null)
   const prefetchedRef = useRef(false)
   const skipFilterResetRef = useRef(false)
+  const [exploreTag, setExploreTag] = useState<string | null>(null)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -431,10 +432,12 @@ function App(): JSX.Element {
             />
           ) : activeFilter === 'explore' ? (
             <ExploreView
+              key={exploreTag || 'explore'}
               books={books}
               viewMode={viewMode}
               sortBy={sortBy}
               selectedBookIndex={null}
+              initialTag={exploreTag}
               onOpenBook={handleOpenBook}
               onUpdateBook={handleUpdateBook}
               onDelete={handleDeleteBook}
@@ -453,6 +456,7 @@ function App(): JSX.Element {
               onDelete={handleDeleteBook}
               onAddBook={() => setShowAddModal(true)}
               onDiscover={() => setActiveFilter('discover')}
+              onTagClick={(tag) => { setExploreTag(tag); setActiveFilter('explore') }}
             />
           )}
         </main>

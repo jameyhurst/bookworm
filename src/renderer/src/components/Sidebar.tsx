@@ -82,7 +82,7 @@ export function Sidebar({ activeFilter, onFilterChange, counts, onAddBook, onOpe
             <HelpCircle size={15} />
           </button>
         </div>
-        <span className="app-version">v0.2.0</span>
+        <span className="app-version">v0.3.0</span>
       </div>
     </aside>
   )

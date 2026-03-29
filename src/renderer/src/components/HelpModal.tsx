@@ -8,12 +8,12 @@ function Key({ children }: { children: string }): JSX.Element {
   return <kbd>{children}</kbd>
 }
 
-function Chord({ keys }: { keys: string[] }): JSX.Element {
+function Chord({ keys, sep = 'then' }: { keys: string[]; sep?: 'then' | 'or' }): JSX.Element {
   return (
     <span className="shortcut-keys">
       {keys.map((k, i) => (
         <span key={i}>
-          {i > 0 && <span className="chord-arrow">then</span>}
+          {i > 0 && <span className="chord-arrow">{sep}</span>}
           <Key>{k}</Key>
         </span>
       ))}
@@ -21,11 +21,11 @@ function Chord({ keys }: { keys: string[] }): JSX.Element {
   )
 }
 
-function ShortcutRow({ label, keys }: { label: string; keys: string[] }): JSX.Element {
+function ShortcutRow({ label, keys, sep }: { label: string; keys: string[]; sep?: 'then' | 'or' }): JSX.Element {
   return (
     <div className="shortcut-row">
       <span className="shortcut-label">{label}</span>
-      <Chord keys={keys} />
+      <Chord keys={keys} sep={sep} />
     </div>
   )
 }
@@ -44,8 +44,8 @@ export function HelpModal({ onClose }: HelpModalProps): JSX.Element {
         <div className="help-body">
           <div className="help-section">
             <h3 className="help-section-title">Navigation</h3>
-            <ShortcutRow label="Move up / down" keys={['↑', '↓']} />
-            <ShortcutRow label="Move left / right (grid)" keys={['←', '→']} />
+            <ShortcutRow label="Move up / down" keys={['↑', '↓']} sep="or" />
+            <ShortcutRow label="Move left / right (grid)" keys={['←', '→']} sep="or" />
             <ShortcutRow label="Open selected book" keys={['o']} />
             <ShortcutRow label="Open selected book" keys={['Enter']} />
             <ShortcutRow label="Close / deselect" keys={['Esc']} />

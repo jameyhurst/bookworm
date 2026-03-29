@@ -439,6 +439,7 @@ function App(): JSX.Element {
               selectedBookIndex={null}
               initialTag={exploreTag}
               onOpenBook={handleOpenBook}
+              onOpenBookById={(id) => { setDetailBookId(id); setDetailFocus('default'); setShowDetail(true) }}
               onUpdateBook={handleUpdateBook}
               onDelete={handleDeleteBook}
               onAddBook={() => setShowAddModal(true)}

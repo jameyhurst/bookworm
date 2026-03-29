@@ -11,6 +11,7 @@ interface ExploreViewProps {
   selectedBookIndex: number | null
   initialTag?: string | null
   onOpenBook: (index: number) => void
+  onOpenBookById: (id: number) => void
   onUpdateBook: (id: number, updates: Partial<Book>) => void
   onDelete: (id: number) => void
   onAddBook: () => void
@@ -24,6 +25,7 @@ export function ExploreView({
   selectedBookIndex,
   initialTag,
   onOpenBook,
+  onOpenBookById,
   onUpdateBook,
   onDelete,
   onAddBook,
@@ -77,7 +79,7 @@ export function ExploreView({
         selectedBookIndex={selectedBookIndex}
         viewMode={viewMode}
         sortBy={sortBy}
-        onOpenBook={onOpenBook}
+        onOpenBook={(i) => onOpenBookById(filtered[i].id)}
         onUpdateBook={onUpdateBook}
         onDelete={onDelete}
         onAddBook={onAddBook}

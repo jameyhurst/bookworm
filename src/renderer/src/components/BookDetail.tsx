@@ -51,6 +51,14 @@ export function BookDetail({
         return
       }
 
+      if (e.key === 'e' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const tag = (e.target as HTMLElement).tagName
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+        e.preventDefault()
+        reviewRef.current?.focus()
+        return
+      }
+
       if (e.key === 'd' && !e.metaKey && !e.ctrlKey && !e.altKey) {
         const tag = (e.target as HTMLElement).tagName
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return

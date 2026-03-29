@@ -5,8 +5,17 @@ export const MOOD_TAGS = [
   'beautiful-prose',
   "couldn't-put-down",
   'mind-bending',
-  'heartwarming',
   'dark',
   'funny',
-  'informative'
+  'informative',
+  'comfort-read',
+  're-read',
+  'gut-punch',
+  'slow-starter',
+  'gift-worthy',
+  'meh',
+  'overrated',
+  'DNF',
+  'pretentious',
+  'unputdownable-trash'
 ]

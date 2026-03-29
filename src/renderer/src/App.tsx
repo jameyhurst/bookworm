@@ -121,7 +121,7 @@ function App(): JSX.Element {
   }, [books])
 
   const filtered =
-    activeFilter === 'all' || activeFilter === 'discover' || activeFilter === 'reports'
+    activeFilter === 'all' || activeFilter === 'discover' || activeFilter === 'reports' || activeFilter === 'explore'
       ? books
       : books.filter((b) => b.status === activeFilter)
 
@@ -434,7 +434,7 @@ function App(): JSX.Element {
               books={books}
               viewMode={viewMode}
               sortBy={sortBy}
-              selectedBookIndex={selectedBookIndex}
+              selectedBookIndex={null}
               onOpenBook={handleOpenBook}
               onUpdateBook={handleUpdateBook}
               onDelete={handleDeleteBook}
